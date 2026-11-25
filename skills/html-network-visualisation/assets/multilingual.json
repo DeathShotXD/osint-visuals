@@ -1,0 +1,46 @@
+{
+  "title": "Fictional multilingual workshop",
+  "subtitle": "Unicode names and source excerpts; English interface",
+  "handling": "SYNTHETIC EXAMPLE · NO REAL SUBJECTS",
+  "scope_note": "Invented catalogue entries in different scripts. Each arrow means listed in the fictional workshop catalogue. Names, quotations and connections are fabricated; script or spelling does not establish identity.",
+  "footer_note": "Synthetic catalogue only. Layout does not measure geography or influence.",
+  "types": {"entry": {"label": "Fictional catalogue entry", "shape": "dot"}, "workshop": {"label": "Fictional workshop", "shape": "square"}},
+  "relations": {"listed": {"label": "Listed in", "description": "Entry listed in a fabricated catalogue; no real affiliation is claimed."}},
+  "nodes": [
+    {"id": "workshop", "label": "Fictional workshop", "kind": "workshop", "records": []},
+    {"id": "arabic", "label": "كيان تجريبي ألف", "kind": "entry", "records": []},
+    {"id": "hebrew", "label": "ישות לדוגמה א", "kind": "entry", "records": []},
+    {"id": "chinese", "label": "虚构实体甲", "kind": "entry", "records": []},
+    {"id": "japanese", "label": "架空の組織ア", "kind": "entry", "records": []},
+    {"id": "cyrillic", "label": "Вымышленная группа А", "kind": "entry", "records": []},
+    {"id": "greek", "label": "Φανταστική ομάδα Α", "kind": "entry", "records": []},
+    {"id": "devanagari", "label": "काल्पनिक समूह अ", "kind": "entry", "records": []},
+    {"id": "korean", "label": "가상 단체 가", "kind": "entry", "records": []},
+    {"id": "accents", "label": "Atelier fictif Étoile", "kind": "entry", "records": []},
+    {"id": "mixed", "label": "كيان تجريبي B-12 🧪", "kind": "entry", "records": []}
+  ],
+  "edges": [
+    {"id": "e-arabic", "from": "arabic", "to": "workshop", "relation": "listed", "records": ["arabic"]},
+    {"id": "e-hebrew", "from": "hebrew", "to": "workshop", "relation": "listed", "records": ["hebrew"]},
+    {"id": "e-chinese", "from": "chinese", "to": "workshop", "relation": "listed", "records": ["chinese"]},
+    {"id": "e-japanese", "from": "japanese", "to": "workshop", "relation": "listed", "records": ["japanese"]},
+    {"id": "e-cyrillic", "from": "cyrillic", "to": "workshop", "relation": "listed", "records": ["cyrillic"]},
+    {"id": "e-greek", "from": "greek", "to": "workshop", "relation": "listed", "records": ["greek"]},
+    {"id": "e-devanagari", "from": "devanagari", "to": "workshop", "relation": "listed", "records": ["devanagari"]},
+    {"id": "e-korean", "from": "korean", "to": "workshop", "relation": "listed", "records": ["korean"]},
+    {"id": "e-accents", "from": "accents", "to": "workshop", "relation": "listed", "records": ["accents"]},
+    {"id": "e-mixed", "from": "mixed", "to": "workshop", "relation": "listed", "records": ["mixed"]}
+  ],
+  "records": {
+    "arabic": {"label": "سجل تجريبي", "status": "recorded", "sources": [{"label": "Fictional catalogue", "locator": "Arabic example", "quote": "هذا مثال خيالي فقط."}]},
+    "hebrew": {"label": "רשומה לדוגמה", "status": "recorded", "sources": [{"label": "Fictional catalogue", "locator": "Hebrew example", "quote": "זו דוגמה בדיונית בלבד."}]},
+    "chinese": {"label": "虚构记录", "status": "recorded", "sources": [{"label": "Fictional catalogue", "locator": "Chinese example", "quote": "这只是虚构的示例。"}]},
+    "japanese": {"label": "架空の記録", "status": "recorded", "sources": [{"label": "Fictional catalogue", "locator": "Japanese example", "quote": "これは架空の例です。"}]},
+    "cyrillic": {"label": "Вымышленная запись", "status": "recorded", "sources": [{"label": "Fictional catalogue", "locator": "Cyrillic example", "quote": "Это только вымышленный пример."}]},
+    "greek": {"label": "Φανταστική εγγραφή", "status": "recorded", "sources": [{"label": "Fictional catalogue", "locator": "Greek example", "quote": "Αυτό είναι μόνο ένα φανταστικό παράδειγμα."}]},
+    "devanagari": {"label": "काल्पनिक अभिलेख", "status": "recorded", "sources": [{"label": "Fictional catalogue", "locator": "Devanagari example", "quote": "यह केवल एक काल्पनिक उदाहरण है।"}]},
+    "korean": {"label": "가상 기록", "status": "recorded", "sources": [{"label": "Fictional catalogue", "locator": "Korean example", "quote": "이것은 가상의 예시입니다."}]},
+    "accents": {"label": "Notice fictive", "status": "recorded", "sources": [{"label": "Fictional catalogue", "locator": "Accented Latin example", "quote": "Ceci est un exemple fictif."}]},
+    "mixed": {"label": "سجل تجريبي B-12", "status": "review", "uncertainty": ["Invented entry marked review to exercise filtering."], "sources": [{"label": "Fictional catalogue", "locator": "Mixed-script example", "quote": "مثال خيالي B-12 🧪"}]}
+  }
+}
