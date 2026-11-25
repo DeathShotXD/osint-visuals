@@ -57,6 +57,38 @@ Then ask, for example:
   the crowd at 46.05143, 14.50606"
 - "Locator map for Beira, Mozambique, 4:5 for Instagram"
 
+## Works with
+
+The skills follow the open [Agent Skills](https://agentskills.io) format, so any agent that reads `SKILL.md` folders
+and can run a terminal command can use them. Checked against each tool's own documentation in November 2026:
+
+| Agent | Put the skill folders in | Cost (at the time of writing) |
+|---|---|---|
+| [Claude Code](https://code.claude.com/docs/en/skills) | `~/.claude/skills/` or a project's `.claude/skills/` | Paid plan or API key |
+| [Claude.ai](https://support.claude.com/en/articles/12512180) (web and apps) | Upload a skill folder as a ZIP under Customize > Skills, with code execution turned on | Free plan included |
+| [OpenCode](https://opencode.ai/docs/skills/) | `~/.config/opencode/skills/` or `~/.agents/skills/` (also reads `~/.claude/skills/`) | Open source (MIT); some free models, for a limited time |
+| [Antigravity CLI](https://antigravity.google/docs/skills) (Google) | `~/.gemini/config/skills/` or a project's `.agents/skills/` | Free individual tier with a weekly quota |
+| [Goose](https://goose-docs.ai/docs/guides/context-engineering/using-skills/) (Agentic AI Foundation) | `~/.agents/skills/` | Open source (Apache-2.0); bring your own model, including a free local one |
+| [Codex CLI](https://learn.chatgpt.com/docs/build-skills) (OpenAI) | `~/.agents/skills/` or a project's `.agents/skills/` | Open source CLI; ChatGPT plan (Free included) or API key |
+| [GitHub Copilot](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills) (CLI, VS Code agent mode) | `~/.agents/skills/`, `~/.copilot/skills/` or a project's `.github/skills/` | Free plan with limited agent use; paid plans from $10/month |
+| [Cursor](https://cursor.com/docs/context/skills) | `~/.agents/skills/` or `~/.cursor/skills/` | Free plan with limited agent requests; paid from $8/month |
+| [Cline](https://docs.cline.bot/features/skills), [Kilo Code](https://kilo.ai/docs/agent-behavior/skills) (VS Code) | `~/.cline/skills/`; `~/.kilo/skills/` or `~/.agents/skills/` | Open source; bring your own model key |
+
+**The most portable folder is `~/.agents/skills/`**: most of these agents read it (Claude Code reads `~/.claude/skills/`,
+Cline `~/.cline/skills/`, Antigravity `~/.gemini/config/skills/`).
+
+```
+mkdir -p ~/.agents/skills
+cp -r osint-visuals/skills/* ~/.agents/skills/
+```
+
+On Claude.ai the scripts run in Claude's cloud sandbox, so you download the HTML files it writes. track-map,
+shadow-diagram and scroll-story need no data downloads. scene-diorama, locator-map and before-after fetch map and
+imagery data, so on Claude.ai they need full internet access: the sandbox only reaches package managers by default,
+so turn on "Allow network egress" in Settings > Capabilities (on Team and Enterprise plans, an owner sets it).
+
+With no agent at all, the scripts still work: see below.
+
 ## The scripts work without an agent
 
 ```
