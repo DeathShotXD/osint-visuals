@@ -14,7 +14,7 @@ Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only 
 | | |
 |---|---|
 | ![An animated tanker track with a 31-hour signal gap and a meeting at sea](docs/gallery/track-map.png) | ![A 3D miniature of a city square with a camera's field of view and the event marked](docs/gallery/scene-diorama.png) |
-| **track-map**: AIS or ADS-B positions become an animated map that labels signal gaps, who was nearby when a ship went dark, ships side by side at sea and positions out of line. | **scene-diorama**: a real place from OpenStreetMap as a miniature, with where the camera stood, what it could see and how far away the event was. |
+| **track-map**: AIS or ADS-B positions become an animated map that labels signal gaps, who was nearby when a ship went dark, ships side by side at sea and positions out of line. | **scene-diorama**: a real place from OpenStreetMap as a miniature, with where the camera stood, what it could see and how far away the event was. Add `--los` and it also checks whether the sight line is clear. |
 | ![A sun-path compass showing a photo fits 09:08 to 09:24, not the claimed 16:30](docs/gallery/shadow-diagram.png) | ![A locator map of Beira, Mozambique, with an inset globe](docs/gallery/locator-map.png) |
 | **shadow-diagram**: when could this shadow have been cast? The windows that fit, and a claimed time tested against them. | **locator-map**: a clean "where is this" map from a place name, in web, social and print sizes. |
 | ![A before-and-after slider of Lahaina, Maui, on 29 July and 18 August 2023](docs/gallery/before-after.png) | ![A scroll story: a map step with a marker on a desktop screen, and a satellite picture step on a phone](docs/gallery/scroll-story.png) |
@@ -97,6 +97,8 @@ python3 skills/shadow-diagram/scripts/shadow.py --lat -1.2864 --lon 36.8172 --da
     --shadow-azimuth 250 --tolerance 6 --height 1.75 --shadow-length 2.3 --claimed 16:30
 python3 skills/scene-diorama/scripts/diorama.py --lat 46.0514 --lon 14.5061 --radius 110 \
     --camera 46.05098,14.50712 --camera-height 9 --target 46.05143,14.50606
+python3 skills/scene-diorama/scripts/diorama.py --lat 46.0514 --lon 14.5061 --radius 200 --los \
+    --camera 46.05070,14.50600 --camera-height 1.7 --target 46.05130,14.50700 --target-height 1.7
 python3 skills/locator-map/scripts/locator.py --place "Beira, Mozambique" --title "Cyclone makes landfall near Beira"
 python3 skills/before-after/scripts/before_after.py --lat 20.873 --lon -156.677 --km 1.8 \
     --before 2023-08-05 --after 2023-08-10 --title "Lahaina before and after the fire"
@@ -115,6 +117,7 @@ OpenFreeMap, so they need a connection when opened. The shadow and before-after 
 |---|---|---|
 | track-map | your CSV; basemap from [OpenFreeMap](https://openfreemap.org) | Map: OpenFreeMap © OpenMapTiles, data © OpenStreetMap contributors (credit is drawn on every export). Your data's own terms apply. |
 | scene-diorama | [Overpass API](https://overpass-api.de) (OpenStreetMap) | ODbL: credit "© OpenStreetMap contributors". One request per place (up to two retries if the server is busy), cached; Overpass is shared, so no bulk loops. |
+| scene-diorama `--los` | [Mapzen Terrarium](https://registry.opendata.aws/terrain-tiles/) terrain, OSM building heights | Keyless, cached, SRTM and others. The graphic credits the terrain source. Terrain is a model, not a survey. |
 | locator-map | [Natural Earth](https://www.naturalearthdata.com), [Nominatim](https://nominatim.org) | Natural Earth is public domain. Nominatim: max 1 request per second, identifying User-Agent, results cached ([policy](https://operations.osmfoundation.org/policies/nominatim/)). |
 | shadow-diagram | none | Sun positions computed locally (NOAA equations). |
 | before-after | your images, or [NASA GIBS](https://www.earthdata.nasa.gov/gibs) (HLS, VIIRS, MODIS) | Keyless; the graphic credits NASA GIBS and, for HLS Sentinel-2, "contains modified Copernicus Sentinel data". The date search fetches up to one small preview per day, from the asked-for date out to 12 days before or after (`--window`), stopping early at a clear pass; cached. Your own images: their owner's terms. |
@@ -138,6 +141,8 @@ These limits are written into the skills. If you fork the pack, please keep them
 - Lines between track reports are straight; the real path, above all across a gap, is unknown.
 - The diorama's heights come from OpenStreetMap tags or are estimated from the building type; roofs and terrain are
   flat. Check it against satellite imagery before you publish.
+- The diorama's line of sight (`--los`) also ignores vegetation, glass, weather and night. A blocked line argues
+  against a claimed camera position; a clear line does not prove one.
 - The shadow maths ignores refraction, so it is unreliable within about 3 degrees of the horizon.
 - Locator borders follow Natural Earth's de facto lines. For disputed areas, follow your outlet's style guide.
 - Free NASA HLS imagery is 30 m a pixel: single buildings are not visible, and some places (remote islands, some ocean
@@ -151,7 +156,8 @@ python3 -m unittest discover -s tests
 
 The tests run offline: track analysis on the regenerated demo data, the sun position against a known value (London's
 noon sun at the December solstice), the shadow windows and claim check, page writing for track, shadow and
-before-after, the diorama and locator geometry helpers, the PNG reader and cloud score used to pick clear satellite
+before-after, the diorama and locator geometry helpers, the terrain encoding, profile sampling and line-of-sight
+verdict, the PNG reader and cloud score used to pick clear satellite
 passes, and the scroll-story parser, its text escaping and its Svelte export.
 
 ## Related

@@ -6,7 +6,9 @@ and where the event was. Standard library only; map data from OpenStreetMap thro
              --camera-height 9 --fov 60 --target 46.05135,14.50618 --target-label "Crowd gathers here" \\
              --title "Where the video was filmed from" --place "Ljubljana, Slovenia" --source "invented demo"
 
-Writes ONE html page (three.js, orbit / isometric / camera's-eye views, PNG and WebM export).
+Writes ONE html page (three.js, orbit / isometric / camera's-eye views, PNG and WebM export). With --los it also
+checks whether the camera could see the target at all, using Mapzen Terrarium terrain and the OSM building heights,
+and draws the elevation profile with the verdict on every export.
 Overpass is a shared, free service: this script makes one request per place and caches it
 (~/.cache/osint-visuals). Please keep it that way: no loops over many places. Map data © OpenStreetMap
 contributors, available under the Open Database Licence (ODbL).
@@ -210,10 +212,17 @@ def main(argv=None):
     ap.add_argument("--fov", type=float, default=60, help="horizontal field of view in degrees (phone main camera ~ 65-75)")
     ap.add_argument("--target", help="LAT,LON of what the camera shows (the event)")
     ap.add_argument("--target-label", default="")
+    ap.add_argument("--target-height", type=float, default=0.0, help="metres the target sits above its ground (--los)")
+    ap.add_argument("--los", action="store_true", help="check the line of sight from the camera to the target (needs both)")
+    ap.add_argument("--los-step", type=float, default=2.0, help="sampling step along the sight line, metres")
+    ap.add_argument("--los-clearance", type=float, default=0.3, help="metres the line must clear an obstacle by")
+    ap.add_argument("--los-z", type=int, default=15, help="terrain tile zoom for the line of sight (13 to 15)")
     ap.add_argument("--label", action="append", default=[], help='extra marker "LAT,LON,text" (repeatable)')
     ap.add_argument("--title", default="The scene"); ap.add_argument("--place", default=""); ap.add_argument("--source", default="")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
+    if a.los and not (a.camera and a.target):
+        sys.exit("--los needs both --camera and --target: it compares what one point can see of the other")
     r = max(60, min(250, a.radius)); P = project(a.lat, a.lon)
     dlat = (r * 1.25) / 110540; dlon = (r * 1.25) / (111320 * math.cos(math.radians(a.lat)))
     osm, cached = overpass(round(a.lat - dlat, 6), round(a.lon - dlon, 6), round(a.lat + dlat, 6), round(a.lon + dlon, 6))
@@ -230,7 +239,22 @@ def main(argv=None):
     ev["labels"] = []
     for s in a.label:
         la, lo, text = s.split(",", 2); x, z = P(float(la), float(lo)); ev["labels"].append({"x": x, "z": z, "text": text.strip()})
+    los = None
+    if a.los:
+        import los as losmod
+        kx = 111320 * math.cos(math.radians(a.lat))
+        cam, target = point(a.camera, P), point(a.target, P)
+        terrain = losmod.Terrain(z=max(13, min(15, a.los_z)))
+
+        def ground(x, z):                      # back to geographic, then to the terrain tile
+            return terrain.elevation(a.lat - z / 110540, a.lon + x / kx)
+
+        buildings = [b for b in scene["buildings"] if not losmod.inside(cam[0], cam[1], b["p"])]
+        los = losmod.los_for(cam, target, a.camera_height, a.target_height, ground, buildings, a.los_step, a.los_clearance)
+        los["terrain"] = "Mapzen Terrarium"
+        los["terrain_tiles"] = len(terrain.tiles)
     data = {"title": a.title, "place": a.place, "source": a.source, "lat": a.lat, "lon": a.lon, "r": r, "scene": scene, "evidence": ev,
+            "los": los,
             "counts": {k: len(v) for k, v in scene.items()}, "osm_time": osm.get("osm3s", {}).get("timestamp_osm_base", ""),
             "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
     page = open(TEMPLATE, encoding="utf-8").read()
@@ -243,6 +267,17 @@ def main(argv=None):
         print("  note: no buildings mapped here in OpenStreetMap; the model will be flat")
     if "distance_m" in ev:
         print(f"  camera to target: {ev['distance_m']} m, facing {ev['camera']['bearing']} degrees")
+    if los:
+        if los["clear"]:
+            print("  line of sight: clear (eye {0} m, target {1} m)".format(los["eye_m"], los["target_m"]))
+        else:
+            b = los["block"]
+            print(f"  line of sight: blocked at {b['d']} m by {b['kind']} "
+                  f"{b['building'] + ' ' if b['building'] else ''}({b['top']} m obstacle, line {b['line']} m)")
+            w = los.get("worst")
+            if w and w is not b:
+                print(f"  worst point {w['d']} m: obstacle {w['top']} m vs line {w['line']} m")
+        print("  note: terrain tiles and OSM heights are a model; check it before you publish")
     return 0
 
 

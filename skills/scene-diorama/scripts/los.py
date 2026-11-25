@@ -156,17 +156,32 @@ def profile(cam, target, eye, target_z, ground, buildings, step=2.0):
         rows.append({"t": round(t, 4), "d": round(dist * t, 1), "x": round(x, 2), "z": round(z, 2),
                      "ground": round(g, 1), "line": round(line, 2), "top": round(top, 1),
                      "margin": round(line - top, 2), "blocked": line < top,
-                     "building": (who or {}).get("n", "")})
+                     "kind": "building" if who else "terrain",
+                     "building": (who or {}).get("n") or (who or {}).get("k") or ("building" if who else "")})
     return dist, rows
 
 
 def summarise(rows, clearance=0.3):
-    """First obstruction with less than `clearance` metres between the line and the top."""
-    blocked = [r for r in rows[1:-1] if r["margin"] < clearance]
-    if not blocked:
-        return {"clear": True, "first": None, "max_margin_drop": min((r["margin"] for r in rows), default=0.0)}
-    first = min(blocked, key=lambda r: r["margin"])
-    return {"clear": False, "first": first, "max_margin_drop": first["margin"]}
+    """First real obstruction. Bare ground under a line that is coming down to a target does not count."""
+    def blocked(r):
+        return r["line"] < r["top"] or (r["top"] > r["ground"] + 0.05 and r["margin"] < clearance)
+
+    hits = [r for r in rows[1:-1] if blocked(r)]
+    if not hits:
+        return {"clear": True, "first": None, "worst": min((r["margin"] for r in rows), default=0.0)}
+    first = hits[0]
+    worst = min(hits, key=lambda r: r["margin"])
+    return {"clear": False, "first": first, "worst": worst}
+
+
+def los_for(cam, target, cam_h, target_h, ground, buildings, step=2.0, clearance=0.3):
+    """Everything diorama.py needs: eye and target elevations, the profile, and the verdict."""
+    eye = ground(*cam) + cam_h
+    target_z = ground(*target) + target_h
+    dist, rows = profile(cam, target, eye, target_z, ground, buildings, max(1.0, step))
+    verdict = summarise(rows, clearance)
+    return {"clear": verdict["clear"], "block": verdict["first"], "worst": verdict.get("worst"), "rows": rows,
+            "distance_m": round(dist, 1), "eye_m": round(eye, 1), "target_m": round(target_z, 1), "clearance": clearance}
 
 
 def svg_page(rows, dist, verdict, meta):
@@ -270,30 +285,32 @@ def main(argv=None):
         lat, lon = to_ll(x, z)
         return terrain.elevation(lat, lon)
 
-    eye = ground(*cam) + a.camera_height
-    target_z = ground(*target) + a.target_height
     # the building the camera stands in is not an obstruction: the camera is on its facade, looking out
     buildings = [b for b in scene["buildings"] if not inside(cam[0], cam[1], b["p"])]
-    dist, rows = profile(cam, target, eye, target_z, ground, buildings, max(1.0, a.step))
-    verdict = summarise(rows, a.clearance)
+    los = los_for(cam, target, a.camera_height, a.target_height, ground, buildings, a.step, a.clearance)
     data = {"title": a.title, "place": a.place, "source": a.source, "camera": cam_ll, "camera_height": a.camera_height,
-            "target": target_ll, "target_height": a.target_height, "distance_m": round(dist, 1),
-            "eye_m": round(eye, 1), "target_m": round(target_z, 1), "clearance": a.clearance,
-            "clear": verdict["clear"], "block": verdict["first"], "rows": rows,
+            "target": target_ll, "target_height": a.target_height,
+            "distance_m": los["distance_m"], "eye_m": los["eye_m"], "target_m": los["target_m"],
+            "clearance": a.clearance, "clear": los["clear"], "block": los["block"], "rows": los["rows"],
             "counts": {k: len(v) for k, v in scene.items()},
             "terrain_tiles_cached": len(terrain.tiles),
             "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
     dest = a.out or "los.svg"
-    svg = svg_page(rows, dist, verdict, {"title": a.title, "place": a.place, "cam": cam_ll, "cam_h": a.camera_height, "target": target_ll})
+    svg = svg_page(los["rows"], los["distance_m"], {"clear": los["clear"], "first": los["block"]},
+                   {"title": a.title, "place": a.place, "cam": cam_ll, "cam_h": a.camera_height, "target": target_ll})
     open(dest, "w", encoding="utf-8").write(svg)
     print(f"wrote {dest} ({os.path.getsize(dest) // 1024} KB)")
-    print(f"  camera eye {eye:.1f} m, target {target_z:.1f} m, {dist:.0f} m apart, {len(rows)} samples, step {a.step} m")
-    if verdict["clear"]:
+    print(f"  camera eye {los['eye_m']} m, target {los['target_m']} m, {los['distance_m']:.0f} m apart, "
+          f"{len(los['rows'])} samples, step {a.step} m")
+    if los["clear"]:
         print("  clear: nothing on the profile rises within the clearance of the line")
     else:
-        b = verdict["first"]
-        print(f"  blocked at {b['d']} m: obstacle {b['top']} m vs line {b['line']} m "
-              f"({abs(b['margin'])} m into it){' - ' + b['building'] if b['building'] else ' - terrain'}")
+        b = los["block"]
+        print(f"  blocked at {b['d']} m: {b['kind']} {b['top']} m vs line {b['line']} m "
+              f"({abs(b['margin'])} m into it){', ' + b['building'] if b['building'] else ''}")
+        w = los.get("worst")
+        if w and w is not b:
+            print(f"  worst point {w['d']} m: {w['kind']} {w['top']} m vs line {w['line']} m")
     print("  note: terrain tiles are a model; buildings and heights come from OSM tags or estimates. Verify before publishing.")
     return 0
 

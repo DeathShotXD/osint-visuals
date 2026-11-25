@@ -28,6 +28,20 @@ python3 scripts/diorama.py --lat 46.0514 --lon 14.5061 --radius 110 \
     --title "..." --place "Prešeren Square, Ljubljana, Slovenia" --source "..."
 ```
 
+Add `--los` to check whether the camera could actually see the target. It reads terrain from Mapzen Terrarium tiles
+(keyless, cached) and uses the building heights already in the model, then draws the elevation profile with the
+verdict:
+
+```
+python3 scripts/diorama.py --lat 46.0514 --lon 14.5061 --radius 200 \
+    --camera 46.05070,14.50600 --camera-height 1.7 \
+    --target 46.05130,14.50700 --target-height 1.7 --los \
+    --title "Could this camera see the square?" --place "Ljubljana, Slovenia"
+```
+
+The building the camera stands in is left out of the check, on the assumption that the camera is on its facade
+looking out. `--los-step` (default 2 m), `--los-clearance` (0.3 m) and `--los-z` (terrain zoom, 13 to 15) tune it.
+
 It makes one request to the public Overpass API and caches it. Do not loop it over many places: Overpass is a shared
 service with daily limits.
 
@@ -35,6 +49,8 @@ service with daily limits.
 
 - The camera's view is an approximation from map outlines and estimated heights. Use it to compare the layout of
   buildings and the angle with the footage, and say so; it is not a photograph or a rendering of the real facades.
+- With `--los`, say which obstacle blocks the line and at what distance. A blocked line is strong evidence against
+  a claimed camera position; a clear line is consistent with it, not proof of it.
 - Check the model against satellite imagery before publishing: OpenStreetMap can be missing buildings or have old ones.
 - Credit "© OpenStreetMap contributors" (the page does this on every export).
 
@@ -43,8 +59,11 @@ service with daily limits.
 - Heights come from OSM `height` or `building:levels` tags when present; otherwise from the building type (a guess).
 - Roofs are flat; terrain is flat. Hilly places will not line up in the camera's view.
 - Building interiors, temporary structures, vehicles and people are not in the data.
+- Line of sight uses Mapzen Terrarium terrain (SRTM and others) and OSM heights. Flat roofs, no vegetation, no
+  glass, no night or weather. It is a model of an open-air sight line, not a survey.
 
 ## Will not do
 
 - Model a private home or identify which flat or window a private person filmed from.
 - Present the camera's view as what the camera actually recorded.
+- Use line of sight to work out which window or flat a private person filmed from.

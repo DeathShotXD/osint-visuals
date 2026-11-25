@@ -153,6 +153,49 @@ $("spin").onclick = () => { spin = !spin; $("spin").setAttribute("aria-pressed",
 // ------------------------------------------------------------------ overlay: title, north arrow, sources
 function font(w, px) { return `${w} ${Math.round(px * u)}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`; }
 function wrap(text, maxW) { const out = []; let cur = ""; for (const w of String(text).split(/\s+/)) { const t = cur ? cur + " " + w : w; if (g2.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; } if (cur) out.push(cur); return out; }
+function losInset(pad) {
+  const L = D.los, rows = L.rows, n = rows.length - 1;
+  const w = Math.min(440 * u, outW * 0.46), h = 150 * u, x0 = outW - pad - w, y0 = pad + 132 * u;
+  const top = y0 + 46 * u, bottom = y0 + h - 44 * u;
+  let lo = Math.min(...rows.map(r => Math.min(r.ground, r.line))) - 4;
+  let hi = Math.max(...rows.map(r => Math.max(r.top, r.line))) + 4;
+  if (hi - lo < 12) hi = lo + 12;
+  const px = d => x0 + 12 * u + (d / Math.max(1, rows[n].d)) * (w - 24 * u);
+  const py = v => bottom - (v - lo) / (hi - lo) * (bottom - top);
+  const col = L.clear ? "#3e8e35" : "#c2372b";
+  g2.save();
+  g2.fillStyle = "rgba(255,255,255,.94)"; g2.strokeStyle = col; g2.lineWidth = 2 * u;
+  g2.beginPath(); g2.roundRect(x0, y0, w, h, 10 * u); g2.fill(); g2.stroke();
+  // ground
+  g2.beginPath(); g2.moveTo(px(rows[0].d), py(lo));
+  rows.forEach(r => g2.lineTo(px(r.d), py(r.ground)));
+  g2.lineTo(px(rows[n].d), py(lo)); g2.closePath();
+  g2.fillStyle = "#e7ddc7"; g2.fill();
+  // obstruction envelope
+  g2.beginPath();
+  rows.forEach((r, i) => { const v = py(Math.max(r.ground, r.top)); i ? g2.lineTo(px(r.d), v) : g2.moveTo(px(r.d), v); });
+  g2.strokeStyle = "#b39a72"; g2.lineWidth = 1.2 * u; g2.stroke();
+  // sight line
+  g2.beginPath();
+  rows.forEach((r, i) => { const v = py(r.line); i ? g2.lineTo(px(r.d), v) : g2.moveTo(px(r.d), v); });
+  g2.strokeStyle = col; g2.lineWidth = 2.4 * u; g2.stroke();
+  if (!L.clear && L.block) {
+    g2.fillStyle = col; g2.beginPath(); g2.arc(px(L.block.d), py(L.block.top), 4.5 * u, 0, 7); g2.fill();
+    g2.font = font(700, 11); g2.fillText(`${L.block.d} m`, px(L.block.d) + 6 * u, py(L.block.top) - 5 * u);
+  }
+  g2.fillStyle = "#1f2428"; g2.font = font(800, 15); g2.fillText("LINE OF SIGHT", x0 + 12 * u, y0 + 20 * u);
+  g2.textAlign = "end"; g2.fillStyle = col; g2.fillText(L.clear ? "CLEAR" : "BLOCKED", x0 + w - 12 * u, y0 + 20 * u); g2.textAlign = "start";
+  g2.fillStyle = "#5b5f63"; g2.font = font(500, 12);
+  g2.fillText(`eye ${L.eye_m} m, target ${L.target_m} m, ${Math.round(L.distance_m)} m apart`, x0 + 12 * u, y0 + 35 * u);
+  g2.fillStyle = "#8a7a66"; g2.font = font(500, 10);
+  g2.fillText("0 m", px(rows[0].d) - 2 * u, bottom + 14 * u);
+  g2.textAlign = "end"; g2.fillText(`${Math.round(rows[n].d)} m`, px(rows[n].d) + 2 * u, bottom + 14 * u); g2.textAlign = "start";
+  g2.fillStyle = "#5b5f63"; g2.font = font(600, 12);
+  const foot = L.clear ? `nothing rises within ${L.clearance} m of the line`
+    : `blocked at ${L.block.d} m by ${L.block.building || "terrain"}, ${L.block.top} m high`;
+  wrap(foot, w - 24 * u).slice(0, 2).forEach((l, i) => g2.fillText(l, x0 + 12 * u, bottom + 30 * u + i * 15 * u));
+  g2.restore();
+}
 function overlay() {
   g2.clearRect(0, 0, outW, outH); const pad = 40 * u;
   g2.fillStyle = "#3e8e35"; g2.font = font(800, 20); g2.fillText(view === "eye" ? "APPROXIMATE VIEW FROM THE CAMERA POSITION" : "SCENE", pad, pad + 16 * u);
@@ -163,9 +206,11 @@ function overlay() {
   const cx = outW - pad - 34 * u, cy = pad + 40 * u; g2.save(); g2.translate(cx, cy); g2.rotate(-ang + Math.PI / 2 * 0); g2.rotate(Math.PI / 2 - ang - Math.PI / 2);
   g2.fillStyle = "rgba(255,255,255,.9)"; g2.beginPath(); g2.arc(0, 0, 30 * u, 0, 7); g2.fill(); g2.fillStyle = "#c2372b"; g2.beginPath(); g2.moveTo(22 * u, 0); g2.lineTo(-10 * u, -9 * u); g2.lineTo(-10 * u, 9 * u); g2.fill();
   g2.restore(); g2.fillStyle = "#1f2428"; g2.font = font(800, 18); g2.textAlign = "center"; g2.fillText("N", cx + Math.cos(-ang) * 0 , cy + 50 * u + 14 * u); g2.textAlign = "start";
+  if (D.los) losInset(pad);
   if (view === "eye") { g2.fillStyle = "rgba(31,36,40,.8)"; g2.font = font(600, 19); wrap("Buildings drawn from OpenStreetMap, heights from tags or estimated. Use this to compare outlines and positions with the footage, not as a photograph.", outW - 2 * pad).forEach((l, i) => g2.fillText(l, pad, outH - 80 * u + i * 24 * u)); }
   g2.font = font(500, 16); g2.fillStyle = "rgba(31,36,40,.75)";
-  const src = `${D.source ? "Evidence: " + D.source + ". " : ""}Map data © OpenStreetMap contributors (ODbL)${D.osm_time ? ", " + D.osm_time.slice(0, 10) : ""}. Made with osint-visuals.`;
+  const src = `${D.source ? "Evidence: " + D.source + ". " : ""}Map data © OpenStreetMap contributors (ODbL)${D.osm_time ? ", " + D.osm_time.slice(0, 10) : ""}.` +
+    `${D.los ? " Terrain: " + D.los.terrain + " (SRTM and others)." : ""} Made with osint-visuals.`;
   wrap(src, outW - 2 * pad).slice(0, 2).reverse().forEach((l, i) => g2.fillText(l, pad, outH - 18 * u - i * 21 * u));
 }
 
