@@ -21,6 +21,12 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 R, D = math.radians, math.degrees
+
+def page_json(obj):
+    """JSON for a <script> block. '<' is escaped so an input value can never close the tag."""
+    return (json.dumps(obj, separators=(",", ":"))
+            .replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e"))
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "..", "assets", "shadow.html")
 
@@ -134,7 +140,7 @@ def main(argv=None):
             "noon": noon[0], "noon_el": noon[2], "claim": claim, "source": a.source,
             "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
     page = open(TEMPLATE, encoding="utf-8").read()
-    page = page.replace("/*__DATA__*/null", json.dumps(data, separators=(",", ":"))).replace("__TITLE__", html.escape(a.title))
+    page = page.replace("/*__DATA__*/null", page_json(data)).replace("__TITLE__", html.escape(a.title))
     dest = a.out or f"shadow-{a.date}.html"
     open(dest, "w", encoding="utf-8").write(page)
     hm = lambda m: f"{m // 60:02d}:{m % 60:02d}"

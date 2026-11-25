@@ -23,6 +23,12 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
+
+def page_json(obj):
+    """JSON for a <script> block. '<' is escaped so an input value can never close the tag."""
+    return (json.dumps(obj, separators=(",", ":"))
+            .replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e"))
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "..", "assets", "diorama.html")
 CACHE = os.path.join(os.path.expanduser("~"), ".cache", "osint-visuals")
@@ -234,7 +240,7 @@ def main(argv=None):
             "counts": {k: len(v) for k, v in scene.items()}, "osm_time": osm.get("osm3s", {}).get("timestamp_osm_base", ""),
             "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
     page = open(TEMPLATE, encoding="utf-8").read()
-    page = page.replace("/*__DATA__*/null", json.dumps(data, separators=(",", ":"))).replace("__TITLE__", html.escape(a.title))
+    page = page.replace("/*__DATA__*/null", page_json(data)).replace("__TITLE__", html.escape(a.title))
     dest = a.out or "diorama.html"
     open(dest, "w", encoding="utf-8").write(page)
     print(f"wrote {dest} ({'cached' if cached else 'fresh'} OpenStreetMap data, {data['osm_time'] or 'time unknown'})")

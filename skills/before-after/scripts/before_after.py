@@ -28,6 +28,12 @@ import urllib.request
 import zlib
 from datetime import date, datetime, timedelta, timezone
 
+
+def page_json(obj):
+    """JSON for a <script> block. '<' is escaped so an input value can never close the tag."""
+    return (json.dumps(obj, separators=(",", ":"))
+            .replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e"))
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "..", "assets", "before-after.html")
 CACHE = os.path.join(os.path.expanduser("~"), ".cache", "osint-visuals", "gibs")
@@ -189,7 +195,7 @@ def main(argv=None):
     data = {"title": a.title, "subtitle": a.subtitle, "imgs": imgs, "labels": labels, "credit": credit, "source": a.source,
             "marks": marks, "info": info, "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
     page = open(TEMPLATE, encoding="utf-8").read()
-    page = page.replace("/*__DATA__*/null", json.dumps(data, separators=(",", ":"))).replace("__TITLE__", html.escape(a.title))
+    page = page.replace("/*__DATA__*/null", page_json(data)).replace("__TITLE__", html.escape(a.title))
     dest = a.out or "before-after.html"
     open(dest, "w", encoding="utf-8").write(page)
     print(f"wrote {dest} ({os.path.getsize(dest) // 1024} KB): {labels[0]} vs {labels[1]}")

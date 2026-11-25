@@ -38,6 +38,12 @@ import shutil
 import sys
 from datetime import datetime, timezone
 
+
+def page_json(obj):
+    """JSON for a <script> block. '<' is escaped so an input value can never close the tag."""
+    return (json.dumps(obj, separators=(",", ":"))
+            .replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e"))
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "..", "assets", "story.html")
 SVELTE = os.path.join(HERE, "..", "assets", "svelte")
@@ -126,7 +132,7 @@ def main(argv=None):
         for k in ("src", "before", "after"):
             if k in s: s[k] = embed(s[k], base)
     page = open(TEMPLATE, encoding="utf-8").read()
-    page = page.replace("/*__DATA__*/null", json.dumps(page_data, separators=(",", ":"))).replace("__TITLE__", html.escape(data["title"]))
+    page = page.replace("/*__DATA__*/null", page_json(page_data)).replace("__TITLE__", html.escape(data["title"]))
     dest = a.out or os.path.splitext(a.script)[0] + ".html"
     open(dest, "w", encoding="utf-8").write(page)
     counts = {k: sum(1 for s in steps if s["kind"] == k) for k in ("map", "image", "compare", "text")}
