@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__ · locator map</title>
+<!-- Written by osint-visuals locator-map (locator.py). Country shapes and cities: Natural Earth (public domain),
+     embedded below; projections: d3-geo. One SVG, so PNG and SVG exports keep every label and the sources. -->
+<script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script>
+<style>
+  :root { --panel:#12171c; --ink:#eef2f0; --line:#26313a; --accent:#5bbf4b; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#1a1f24; color:var(--ink); font:14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  #wrap { position:absolute; inset:0 0 64px 0; display:grid; place-items:center; padding:12px; }
+  svg { max-width:100%; max-height:100%; height:auto; box-shadow:0 0 0 1px var(--line); }
+  #ui { position:absolute; left:0; right:0; bottom:0; height:64px; display:flex; align-items:center; gap:10px; padding:0 14px; background:var(--panel); border-top:1px solid var(--line); }
+  #ui button, #ui select { font:600 13px system-ui, sans-serif; color:var(--ink); background:#1b232a; border:1px solid var(--line); border-radius:8px; padding:8px 12px; cursor:pointer; }
+  #ui button:hover, #ui select:hover { border-color:var(--accent); } #ui button:focus-visible, #ui select:focus-visible, #ui input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  #ui label { color:#9aa7a2; font-weight:600; } #zoom { width:140px; accent-color:var(--accent); } .sp { flex:1; }
+</style></head>
+<body>
+<div id="wrap"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
+<div id="ui">
+  <label for="zoom">Zoom</label><input id="zoom" type="range" min="-100" max="100" value="0">
+  <select id="theme" aria-label="Theme"><option value="light">Light</option><option value="dark">Dark</option></select><span class="sp"></span>
+  <select id="fmt" aria-label="Frame"><option value="3:2">3:2 · 1200 web</option><option value="4:5">4:5 · 1080</option><option value="1:1">1:1 · 1080</option><option value="9:16">9:16 · Reel</option><option value="16:9">16:9 · 1920</option><option value="print">Print · 2400</option></select>
+  <button id="png">PNG</button><button id="svgb">SVG</button>
+</div>
+<script>
+const D = /*__DATA__*/null, $ = id => document.getElementById(id), svg = d3.select("#svg");
+const FMT = { "3:2": [1200, 800], "4:5": [1080, 1350], "1:1": [1080, 1080], "9:16": [1080, 1920], "16:9": [1920, 1080], print: [2400, 1600] };
+const THEMES = { light: { bg: "#ffffff", sea: "#d9e8f1", land: "#ece7dc", home: "#ffffff", border: "#b5ad9e", homeBorder: "#5e574c", ink: "#1e2226", dim: "#6b6f72", country: "#8d877c", mark: "#d7352a", city: "#3b4045", globeSea: "#cfe2ee" },
+  dark: { bg: "#0f1418", sea: "#16222c", land: "#2a3138", home: "#46525c", border: "#4b545c", homeBorder: "#c9d1d6", ink: "#eef2f0", dim: "#9aa7a2", country: "#8f9aa1", mark: "#ff5a4a", city: "#d5dbdf", globeSea: "#1c2d3a" } };
+let fmt = "3:2", theme = D.theme || "light", zoom = 0;
+// d3 wants each ring wound so it covers less than half the globe; flip any that come out inside-out
+const feat = polys => { const f = { type: "Feature", geometry: { type: "MultiPolygon", coordinates: polys } };
+  f.geometry.coordinates = polys.map(p => d3.geoArea({ type: "Polygon", coordinates: p }) > 2 * Math.PI ? p.map(r => r.slice().reverse()) : p); return f; };
+const COUNTRIES = D.countries.map(c => ({ ...c, f: feat(c.polys) })), GLOBE = D.globe.map(c => ({ ...c, f: feat(c.polys) }));
+function wrapText(s, size, weight, maxW) { const ctx = wrapText.c || (wrapText.c = document.createElement("canvas").getContext("2d")); ctx.font = `${weight} ${size}px system-ui, sans-serif`;
+  const out = []; let cur = ""; for (const w of String(s).split(/\s+/)) { const t = cur ? cur + " " + w : w; if (ctx.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; } if (cur) out.push(cur); return out; }
+const measure = (s, size, weight) => { const ctx = wrapText.c || (wrapText.c = document.createElement("canvas").getContext("2d")); ctx.font = `${weight} ${size}px system-ui, sans-serif`; return ctx.measureText(s).width; };
+
+function draw() {
+  const [W, H] = FMT[fmt], T = THEMES[theme], u = Math.min(W, H) / 1000, pad = 44 * u; svg.selectAll("*").remove();
+  svg.attr("viewBox", `0 0 ${W} ${H}`).attr("width", W).attr("height", H).attr("font-family", "system-ui, -apple-system, Segoe UI, Roboto, sans-serif");
+  svg.append("rect").attr("width", W).attr("height", H).attr("fill", T.bg);
+  // title block
+  let y = pad + 18 * u; svg.append("text").attr("x", pad).attr("y", y).attr("font-size", 20 * u).attr("font-weight", 800).attr("letter-spacing", 2.5 * u).attr("fill", "#3e8e35").text("LOCATOR");
+  wrapText(D.title, 46 * u, 800, W - 2 * pad).slice(0, 2).forEach(l => { y += 54 * u; svg.append("text").attr("x", pad).attr("y", y).attr("font-size", 46 * u).attr("font-weight", 800).attr("fill", T.ink).text(l); });
+  if (D.subtitle) { y += 36 * u; svg.append("text").attr("x", pad).attr("y", y).attr("font-size", 24 * u).attr("font-weight", 500).attr("fill", T.dim).text(D.subtitle); }
+  const top = y + 26 * u, foot = 70 * u, mx = 0, mw = W, my = top, mh = H - top - foot;
+  // main map
+  const kmPerPx0 = D.hw / (Math.min(mw, mh) / 2 * 0.92), kmPerPx = kmPerPx0 * Math.pow(2, -zoom / 50);
+  // Mercator: one radian of longitude is `scale` px wide, and 6371 * cos(lat) km on the ground at the marker
+  const proj = d3.geoMercator().center([D.lon, D.lat]).scale(6371 * Math.cos(D.lat * Math.PI / 180) / kmPerPx)
+    .translate([mx + mw / 2, my + mh / 2]).clipExtent([[mx, my], [mx + mw, my + mh]]);
+  const path = d3.geoPath(proj), cp = svg.append("clipPath").attr("id", "mclip"); cp.append("rect").attr("x", mx).attr("y", my).attr("width", mw).attr("height", mh);
+  const m = svg.append("g").attr("clip-path", "url(#mclip)");
+  m.append("rect").attr("x", mx).attr("y", my).attr("width", mw).attr("height", mh).attr("fill", T.sea);
+  COUNTRIES.forEach(c => m.append("path").attr("d", path(c.f)).attr("fill", c.home ? T.home : T.land).attr("stroke", T.border).attr("stroke-width", 1.2 * u).attr("stroke-linejoin", "round"));
+  COUNTRIES.filter(c => c.home).forEach(c => m.append("path").attr("d", path(c.f)).attr("fill", "none").attr("stroke", T.homeBorder).attr("stroke-width", 2.4 * u).attr("stroke-linejoin", "round"));
+  // labels: countries, then cities, skipping anything that would overlap
+  const taken = [], free = (x, y, w, h) => !taken.some(r => x < r[0] + r[2] && x + w > r[0] && y < r[1] + r[3] && y + h > r[1]) && x > mx + 8 && x + w < mx + mw - 8 && y > my + 8 && y + h < my + mh - 8;
+  const [px, py] = proj([D.lon, D.lat]), mk = 12 * u;
+  const lab = D.label, lw = measure(lab, 30 * u, 800) + 28 * u, lh = 46 * u; let lx = px + 22 * u, ly = py - lh / 2; if (lx + lw > mx + mw - pad) lx = px - 22 * u - lw;
+  taken.push([px - 20 * u, py - 20 * u, 40 * u, 40 * u], [lx, ly, lw, lh]);
+  const gs = 150 * u, gx = mx + mw - pad - gs, gy = my + 16 * u; taken.push([gx - 10 * u, gy - 10 * u, gs + 20 * u, gs + 40 * u]);   // the inset globe's corner
+  COUNTRIES.filter(c => c.lx != null).sort((a, b) => b.home - a.home).forEach(c => { const p = proj([c.lx, c.ly]); if (!p) return; const size = (c.home ? 26 : 20) * u, t = c.n.toUpperCase(), w = measure(t, size, 700) * 1.12, h = size;
+    if (!free(p[0] - w / 2, p[1] - h, w, h)) return; taken.push([p[0] - w / 2, p[1] - h, w, h]);
+    m.append("text").attr("x", p[0]).attr("y", p[1]).attr("text-anchor", "middle").attr("font-size", size).attr("font-weight", 700).attr("letter-spacing", (c.home ? 4 : 3) * u).attr("fill", c.home ? T.ink : T.country).attr("opacity", c.home ? .55 : .9).text(t); });
+  let shown = 0; const maxCities = Math.round(10 * (W * H) / (1200 * 800));
+  D.cities.forEach(c => { if (shown >= maxCities) return; const p = proj([c.x, c.y]); if (!p) return; const size = (c.cap ? 21 : 18) * u, w = measure(c.n, size, c.cap ? 700 : 500) + 16 * u;
+    const right = free(p[0] + 8 * u, p[1] - size, w, size + 6 * u), left = !right && free(p[0] - 8 * u - w, p[1] - size, w, size + 6 * u);
+    if (!right && !left) return; const x0 = right ? p[0] + 9 * u : p[0] - 9 * u; taken.push([right ? p[0] + 8 * u : p[0] - 8 * u - w, p[1] - size, w, size + 6 * u]);
+    if (c.cap) m.append("path").attr("d", d3.symbol(d3.symbolStar, 120 * u * u)()).attr("transform", `translate(${p[0]},${p[1]})`).attr("fill", T.city);
+    else m.append("circle").attr("cx", p[0]).attr("cy", p[1]).attr("r", 4 * u).attr("fill", T.city);
+    m.append("text").attr("x", x0).attr("y", p[1] + 6 * u).attr("text-anchor", right ? "start" : "end").attr("font-size", size).attr("font-weight", c.cap ? 700 : 500).attr("fill", T.city)
+      .attr("stroke", T.bg).attr("stroke-width", 4 * u).attr("paint-order", "stroke").text(c.n); shown++; });
+  // the marker and its label
+  m.append("circle").attr("cx", px).attr("cy", py).attr("r", mk * 2.4).attr("fill", T.mark).attr("opacity", .18);
+  m.append("circle").attr("cx", px).attr("cy", py).attr("r", mk).attr("fill", T.mark).attr("stroke", "#fff").attr("stroke-width", 3.5 * u);
+  m.append("rect").attr("x", lx).attr("y", ly).attr("width", lw).attr("height", lh).attr("rx", 8 * u).attr("fill", T.mark);
+  m.append("text").attr("x", lx + 14 * u).attr("y", ly + lh / 2 + 10 * u).attr("font-size", 30 * u).attr("font-weight", 800).attr("fill", "#fff").text(lab);
+  // scale bar
+  const nice = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000], target = kmPerPx * 160 * u, km = nice.reduce((b, n) => Math.abs(n - target) < Math.abs(b - target) ? n : b, 1), bw = km / kmPerPx;
+  const sx = pad, sy = my + mh - 28 * u; m.append("rect").attr("x", sx - 10 * u).attr("y", sy - 30 * u).attr("width", bw + 20 * u).attr("height", 46 * u).attr("rx", 6 * u).attr("fill", T.bg).attr("opacity", .82);
+  m.append("rect").attr("x", sx).attr("y", sy).attr("width", bw).attr("height", 6 * u).attr("fill", T.ink);
+  m.append("text").attr("x", sx).attr("y", sy - 10 * u).attr("font-size", 17 * u).attr("font-weight", 700).attr("fill", T.ink).text(`${km} km`);
+  // inset globe with the main map's area outlined
+  const g = svg.append("g"), gp = d3.geoOrthographic().rotate([-D.lon, -D.lat]).fitExtent([[gx, gy], [gx + gs, gy + gs]], { type: "Sphere" }), gpath = d3.geoPath(gp);
+  g.append("circle").attr("cx", gx + gs / 2).attr("cy", gy + gs / 2).attr("r", gs / 2 + 7 * u).attr("fill", T.bg).attr("opacity", .92);
+  g.append("path").attr("d", gpath({ type: "Sphere" })).attr("fill", T.globeSea).attr("stroke", T.border).attr("stroke-width", 1.5 * u);
+  GLOBE.forEach(c => g.append("path").attr("d", gpath(c.f)).attr("fill", c.home ? T.mark : T.land).attr("opacity", c.home ? .85 : 1).attr("stroke", T.border).attr("stroke-width", .5 * u));
+  const corners = [[mx, my], [mx + mw, my], [mx + mw, my + mh], [mx, my + mh]].map(p => proj.invert(p)), ring = [];
+  for (let i = 0; i < 4; i++) { const a = corners[i], b = corners[(i + 1) % 4]; for (let k = 0; k < 10; k++) ring.push([a[0] + (b[0] - a[0]) * k / 10, a[1] + (b[1] - a[1]) * k / 10]); }
+  ring.push(ring[0]); const box = { type: "Polygon", coordinates: [ring] }; if (d3.geoArea(box) > 2 * Math.PI) box.coordinates[0].reverse();
+  g.append("path").attr("d", gpath(box)).attr("fill", "none").attr("stroke", T.ink).attr("stroke-width", 2 * u);
+  // sources
+  const src = `${D.source ? "Source: " + D.source + ". " : ""}Map: Natural Earth (public domain)${D.geocoded ? "; place lookup © OpenStreetMap contributors (Nominatim)" : ""}. Made with osint-visuals.`;
+  wrapText(src, 17 * u, 500, W - 2 * pad).slice(0, 2).forEach((l, i, arr) => svg.append("text").attr("x", pad).attr("y", H - 24 * u - (arr.length - 1 - i) * 22 * u).attr("font-size", 17 * u).attr("font-weight", 500).attr("fill", T.dim).text(l));
+}
+draw();
+$("fmt").onchange = e => { fmt = e.target.value; draw(); };
+$("theme").value = theme; $("theme").onchange = e => { theme = e.target.value; draw(); };
+$("zoom").oninput = e => { zoom = +e.target.value; draw(); };
+const slug = () => (D.label || "locator").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+function save(blob, ext) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `locator-${slug()}-${fmt.replace(":", "x")}.${ext}`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+const node = () => document.getElementById("svg");
+$("svgb").onclick = () => save(new Blob([new XMLSerializer().serializeToString(node())], { type: "image/svg+xml" }), "svg");
+$("png").onclick = () => { const [W, H] = FMT[fmt], img = new Image(), url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(node())], { type: "image/svg+xml" }));
+  img.onload = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; c.getContext("2d").drawImage(img, 0, 0, W, H); c.toBlob(b => save(b, "png")); URL.revokeObjectURL(url); }; img.src = url; };
+const q = new URLSearchParams(location.search); if (q.get("fmt") && FMT[q.get("fmt")]) { fmt = q.get("fmt"); $("fmt").value = fmt; draw(); } if (q.get("theme")) { theme = q.get("theme"); $("theme").value = theme; draw(); }
+</script>
+</body></html>

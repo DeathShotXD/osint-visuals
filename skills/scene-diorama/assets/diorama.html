@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__ · scene diorama</title>
+<!-- Written by osint-visuals scene-diorama (diorama.py). The OpenStreetMap features for this square are embedded below
+     (© OpenStreetMap contributors, ODbL); three.js draws them as a miniature. Building heights come from OSM tags or
+     are estimated from the building type, so the camera's-eye view is an approximation, not a photograph. -->
+<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }</script>
+<style>
+  :root { --bg:#efe9dc; --panel:#12171c; --ink:#eef2f0; --line:#26313a; --accent:#5bbf4b; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#1a1f24; color:var(--ink); font:14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow:hidden; }
+  #wrap { position:absolute; inset:0 0 64px 0; display:grid; place-items:center; }
+  #stage { position:relative; }
+  #stage canvas { position:absolute; inset:0; display:block; }
+  #ov { pointer-events:none; }
+  #ui { position:absolute; left:0; right:0; bottom:0; height:64px; display:flex; align-items:center; gap:8px; padding:0 14px; background:var(--panel); border-top:1px solid var(--line); overflow-x:auto; }
+  #ui button, #ui select { font:600 13px system-ui, sans-serif; color:var(--ink); background:#1b232a; border:1px solid var(--line); border-radius:8px; padding:8px 12px; cursor:pointer; white-space:nowrap; }
+  #ui button:hover, #ui select:hover { border-color:var(--accent); } #ui button[aria-pressed="true"] { background:#24402a; border-color:var(--accent); }
+  #ui button:focus-visible, #ui select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  #ui .sp { flex:1; } #ui button.rec { border-color:#ff5252; color:#ffb3b3; }
+</style></head>
+<body>
+<div id="wrap"><div id="stage"><canvas id="gl"></canvas><canvas id="ov"></canvas></div></div>
+<div id="ui">
+  <button data-view="iso" aria-pressed="true">Diorama</button><button data-view="top" aria-pressed="false">Top</button><button data-view="eye" aria-pressed="false">Camera's view</button>
+  <button id="spin" aria-pressed="false">Spin</button><span class="sp"></span>
+  <select id="fmt" aria-label="Frame"><option value="screen">Screen</option><option value="1:1">1:1 · 1080</option><option value="4:5">4:5 · 1080</option><option value="16:9">16:9 · 1920</option><option value="9:16">9:16 · Reel</option></select>
+  <button id="png">PNG</button><button id="rec" class="rec">● Record orbit</button>
+</div>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+const D = /*__DATA__*/null, S0 = D.scene, R = D.r, EV = D.evidence || {};
+const $ = id => document.getElementById(id);
+const FMT = { screen: null, "1:1": [1080, 1080], "4:5": [1080, 1350], "16:9": [1920, 1080], "9:16": [1080, 1920] };
+const PAL = { bg: 0xf1ebdf, ground: 0xe9e1cf, plinth: 0xb9a582, plinthDark: 0x8c7a5c, road: 0xfbf8f1, foot: 0xf2ead9, green: 0xbcd59b,
+  water: 0x9ccfe6, paved: 0xe2dccd, rail: 0x9a9184, trunk: 0x8a6a4a, canopy: [0x7fb069, 0x93bf6f, 0x6fa35f, 0xa3c97a],
+  walls: [0xf6dcc0, 0xeed0b3, 0xf4e6c8, 0xdde6ea, 0xedd5db, 0xf1e2b0, 0xd6e4cb, 0xf0d6bd], roofs: [0xc4785a, 0xb0866a, 0x8f9ea8, 0xc99863, 0xa8b59a, 0xb56f5f],
+  landmarkWall: 0xf3efe6, landmarkRoof: 0x7f9096, cam: 0xf2a33a, target: 0xe24a3b };
+
+// ------------------------------------------------------------------ renderer, scene, light
+const gl = $("gl"), ov = $("ov"), g2 = ov.getContext("2d");
+const renderer = new THREE.WebGLRenderer({ canvas: gl, antialias: true, preserveDrawingBuffer: true });
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.setClearColor(PAL.bg);
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xfff6e6, 0xb5a487, 1.15));
+const sun = new THREE.DirectionalLight(0xfff1dc, 1.6); sun.position.set(-R * 0.9, R * 1.6, R * 0.7); sun.castShadow = true;
+Object.assign(sun.shadow.camera, { left: -R * 1.6, right: R * 1.6, top: R * 1.6, bottom: -R * 1.6, near: 1, far: R * 6 }); sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.4;
+scene.add(sun);
+const mat = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
+const toShape = pts => { const s = new THREE.Shape(); pts.forEach((p, i) => i ? s.lineTo(p[0], -p[1]) : s.moveTo(p[0], -p[1])); return s; };
+const flat = (pts, y, m) => { const ge = new THREE.ShapeGeometry(toShape(pts)); ge.rotateX(-Math.PI / 2); const me = new THREE.Mesh(ge, m); me.position.y = y; me.receiveShadow = true; scene.add(me); return me; };
+
+// the tile and its plinth (the cut edge of the model shows soil layers)
+const plinth = new THREE.Mesh(new THREE.BoxGeometry(2 * R, 10, 2 * R), [mat(PAL.plinth), mat(PAL.plinth), mat(PAL.ground), mat(PAL.plinthDark), mat(PAL.plinth), mat(PAL.plinth)]);
+plinth.position.y = -5; plinth.receiveShadow = true; scene.add(plinth);
+const strata = new THREE.Mesh(new THREE.BoxGeometry(2 * R + 0.4, 1.2, 2 * R + 0.4), mat(0xa38f6b)); strata.position.y = -3.2; scene.add(strata);
+S0.green.forEach(p => flat(p, 0.03, mat(PAL.green)));
+S0.paved.forEach(p => flat(p, 0.035, mat(PAL.paved)));
+S0.water.forEach(p => flat(p, 0.045, mat(PAL.water)));
+// roads as flat ribbons
+function ribbon(pts, w, y, m) {
+  if (pts.length < 2) return; const pos = [], idx = [];
+  pts.forEach((p, i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)]; let dx = b[0] - a[0], dz = b[1] - a[1]; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+    pos.push(p[0] - dz * w / 2, y, p[1] + dx * w / 2, p[0] + dz * w / 2, y, p[1] - dx * w / 2); if (i) { const k = 2 * i; idx.push(k - 2, k - 1, k, k - 1, k + 1, k); } });
+  const ge = new THREE.BufferGeometry(); ge.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); ge.setIndex(idx); ge.computeVertexNormals();
+  const me = new THREE.Mesh(ge, m); me.receiveShadow = true; scene.add(me); }
+const roadM = mat(PAL.road, { side: THREE.DoubleSide }), footM = mat(PAL.foot, { side: THREE.DoubleSide }), wM = mat(PAL.water, { side: THREE.DoubleSide });
+const FOOT = new Set(["footway", "path", "cycleway", "steps", "track", "pedestrian"]);
+S0.roads.forEach(r => ribbon(r.p, r.w, r.k === "water" ? 0.05 : FOOT.has(r.k) ? 0.07 : 0.06, r.k === "water" ? wM : FOOT.has(r.k) ? footM : roadM));
+S0.rails.forEach(r => ribbon(r, 1.6, 0.08, mat(PAL.rail, { side: THREE.DoubleSide })));
+// buildings, with soft paper edges
+const hash = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return Math.abs(h); };
+const wallMs = PAL.walls.map(c => mat(c)), roofMs = PAL.roofs.map(c => mat(c)), edgeM = new THREE.LineBasicMaterial({ color: 0x5a4a3a, transparent: true, opacity: 0.22 });
+const LANDMARK = /church|cathedral|chapel|mosque|temple|synagogue|shrine|tower|castle|palace|station|town_hall|civic|government|museum|theatre|university/;
+const named = [], around = [];   // around: buildings that contain the camera point (hidden in the camera's view)
+const inside = (x, z, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, zi] = poly[i], [xj, zj] = poly[j];
+  if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
+S0.buildings.forEach((b, i) => {
+  const h = Math.max(2.5, b.h - (b.min || 0)), ge = new THREE.ExtrudeGeometry(toShape(b.p), { depth: h, bevelEnabled: false }); ge.rotateX(-Math.PI / 2);
+  const land = LANDMARK.test(b.k) || (b.n && LANDMARK.test(b.n.toLowerCase())), k = hash(i + b.k + b.n);
+  const me = new THREE.Mesh(ge, land ? [mat(PAL.landmarkRoof), mat(PAL.landmarkWall)] : [roofMs[k % roofMs.length], wallMs[k % wallMs.length]]);
+  me.position.y = b.min || 0; me.castShadow = me.receiveShadow = true; scene.add(me);
+  const e = new THREE.LineSegments(new THREE.EdgesGeometry(ge, 30), edgeM); e.position.y = me.position.y; scene.add(e);
+  if (EV.camera && inside(EV.camera.x, EV.camera.z, b.p)) around.push(me, e);
+  if (b.n) { let a = 0, cx = 0, cz = 0; b.p.forEach((p, j) => { const q = b.p[(j + 1) % b.p.length], c = p[0] * q[1] - q[0] * p[1]; a += c; cx += (p[0] + q[0]) * c; cz += (p[1] + q[1]) * c; });
+    a /= 2; if (Math.abs(a) > 1) named.push({ n: b.n, x: cx / (6 * a), z: cz / (6 * a), y: b.h, area: Math.abs(a) }); }
+});
+// trees: one instanced trunk and canopy each
+if (S0.trees.length) { const n = S0.trees.length, tr = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.25, 0.35, 3, 6), mat(PAL.trunk), n),
+  cn = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(2.4, 1), new THREE.MeshLambertMaterial({ flatShading: true }), n), M = new THREE.Matrix4(), col = new THREE.Color();
+  S0.trees.forEach(([x, z], i) => { const s = 0.8 + (hash(i) % 50) / 100; M.makeScale(1, s, 1).setPosition(x, 1.5 * s, z); tr.setMatrixAt(i, M);
+    M.makeScale(s, s * 1.1, s).setPosition(x, 3 * s + 2, z); cn.setMatrixAt(i, M); cn.setColorAt(i, col.setHex(PAL.canopy[hash(i * 7) % 4])); });
+  tr.castShadow = cn.castShadow = true; scene.add(tr, cn); }
+
+// ------------------------------------------------------------------ the evidence
+const evidence = new THREE.Group(); scene.add(evidence); const labels = [];
+function label(text, colour, pos, big) {
+  const c = document.createElement("canvas"), x = c.getContext("2d"), fs = big ? 44 : 34; x.font = `800 ${fs}px system-ui, sans-serif`;
+  const w = Math.ceil(x.measureText(text).width) + 40, h = fs + 30; c.width = w; c.height = h; x.font = `800 ${fs}px system-ui, sans-serif`;
+  x.fillStyle = "rgba(255,255,255,.95)"; x.beginPath(); x.roundRect(2, 2, w - 4, h - 4, 14); x.fill(); x.strokeStyle = colour; x.lineWidth = 4; x.stroke();
+  x.fillStyle = colour === "#ffffff" ? "#222" : colour; x.textBaseline = "middle"; x.fillText(text, 20, h / 2 + 2);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, sizeAttenuation: true }));
+  sp.renderOrder = 10; sp.userData = { w, h, big }; sp.position.copy(pos); scene.add(sp); labels.push(sp); return sp; }
+const dir = b => new THREE.Vector3(Math.sin(b * Math.PI / 180), 0, -Math.cos(b * Math.PI / 180));
+let camPos = null, camLook = null; const camMarker = new THREE.Group(); evidence.add(camMarker); let camLabel = null;
+if (EV.camera) { const c = EV.camera, p = new THREE.Vector3(c.x, c.h, c.z), cm = mat(PAL.cam);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 2), mat(0x2f343a)); body.position.copy(p); body.rotation.y = -c.bearing * Math.PI / 180; camMarker.add(body);
+  const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 1.4, 16), cm); lens.rotation.x = Math.PI / 2; lens.position.set(0, 0, -1.6); body.add(lens);
+  if (c.h > 2.5) { const pole = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(c.x, 0.1, c.z), p]), new THREE.LineDashedMaterial({ color: PAL.cam, dashSize: 1.2, gapSize: 0.8 })); pole.computeLineDistances(); camMarker.add(pole); }
+  const ring = new THREE.Mesh(new THREE.RingGeometry(2.2, 3.2, 40), new THREE.MeshBasicMaterial({ color: PAL.cam, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.set(c.x, 0.12, c.z); camMarker.add(ring);
+  // field of view: a see-through pyramid to the distance of the target (or across the tile)
+  const L = Math.min(R * 1.4, (EV.distance_m || R * 0.8) * 1.3), hf = c.fov * Math.PI / 360, vf = Math.atan(Math.tan(hf) * 9 / 16), f = dir(c.bearing), rgt = new THREE.Vector3(-f.z, 0, f.x);
+  const corner = (sx, sy) => p.clone().add(f.clone().multiplyScalar(L)).add(rgt.clone().multiplyScalar(sx * L * Math.tan(hf))).add(new THREE.Vector3(0, sy * L * Math.tan(vf), 0));
+  const cs = [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)].map(v => { v.y = Math.max(0.2, v.y); return v; });
+  const fg = new THREE.BufferGeometry().setFromPoints([p, cs[0], cs[1], p, cs[1], cs[2], p, cs[2], cs[3], p, cs[3], cs[0]]); fg.computeVertexNormals();
+  camMarker.add(new THREE.Mesh(fg, new THREE.MeshBasicMaterial({ color: PAL.cam, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false })));
+  camMarker.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(cs.flatMap(v => [p, v]).concat([cs[0], cs[1], cs[1], cs[2], cs[2], cs[3], cs[3], cs[0]])), new THREE.LineBasicMaterial({ color: PAL.cam, transparent: true, opacity: 0.8 })));
+  camLabel = label(`CAMERA${c.h > 2.5 ? ` · ${Math.round(c.h)} m up` : ""}`, "#c9741a", p.clone().add(new THREE.Vector3(0, 7, 0)), true);
+  camPos = p; camLook = p.clone().add(f.clone().multiplyScalar(50)); }
+if (EV.target) { const t = EV.target, tp = new THREE.Vector3(t.x, 0, t.z), tm = mat(PAL.target);
+  const pin = new THREE.Mesh(new THREE.ConeGeometry(1.6, 5, 20), tm); pin.rotation.x = Math.PI; pin.position.set(t.x, 2.5 + 1, t.z); pin.castShadow = true; evidence.add(pin);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(2.1, 24, 16), tm); head.position.set(t.x, 6.5 + 1, t.z); head.castShadow = true; evidence.add(head);
+  const tr = new THREE.Mesh(new THREE.RingGeometry(3, 4.2, 40), new THREE.MeshBasicMaterial({ color: PAL.target, side: THREE.DoubleSide, transparent: true })); tr.rotation.x = -Math.PI / 2; tr.position.set(t.x, 0.13, t.z); evidence.add(tr); evidence.userData.ring = tr;
+  label(t.label || "TARGET", "#c2372b", new THREE.Vector3(t.x, 13, t.z), true);
+  if (camPos) { const sl = new THREE.Line(new THREE.BufferGeometry().setFromPoints([camPos, new THREE.Vector3(t.x, 1.6, t.z)]), new THREE.LineDashedMaterial({ color: PAL.target, dashSize: 2.2, gapSize: 1.4 }));
+    sl.computeLineDistances(); evidence.add(sl);
+    const mid = camPos.clone().lerp(new THREE.Vector3(t.x, 1.6, t.z), 0.5).add(new THREE.Vector3(0, 4, 0)); label(`${EV.distance_m} m`, "#c2372b", mid, false); } }
+(EV.labels || []).forEach(l => label(l.text, "#2f6db3", new THREE.Vector3(l.x, 10, l.z), false));
+const busy = [EV.camera, EV.target].filter(Boolean).map(e => [e.x, e.z]);
+named.filter(n => !busy.some(([x, z]) => Math.hypot(n.x - x, n.z - z) < 28)).sort((a, b) => b.area - a.area).slice(0, 4).forEach(n => label(n.n.length > 34 ? n.n.slice(0, 32) + "…" : n.n, "#ffffff", new THREE.Vector3(n.x, n.y + 6, n.z), false));
+
+// ------------------------------------------------------------------ cameras and views
+const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, -R * 10, R * 10), persp = new THREE.PerspectiveCamera(50, 1, 0.5, R * 8);
+let cam = ortho, view = "iso", outW = 0, outH = 0, S = 1, u = 1, fmt = "screen", spin = false, recording = null;
+const controls = new OrbitControls(ortho, ov); controls.enableDamping = true; controls.maxPolarAngle = Math.PI / 2.15; ov.style.pointerEvents = "auto";
+function setView(v) { view = v; document.querySelectorAll("[data-view]").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === v));
+  around.forEach(m => m.visible = v !== "eye");
+  evidence.visible = true; labels.forEach(l => l.visible = true);
+  camMarker.visible = v !== "eye"; if (camLabel) camLabel.visible = v !== "eye";
+  if (v === "eye" && camPos) { cam = persp; controls.enabled = false;
+    persp.position.copy(camPos); persp.lookAt(EV.target ? new THREE.Vector3(EV.target.x, 1.6, EV.target.z) : camLook); fitCam(); return; }
+  cam = ortho; controls.enabled = true; controls.object = ortho;
+  if (v === "top") ortho.position.set(0, R * 4, 0.001); else ortho.position.set(R * 1.6, R * 1.9, R * 2.2);
+  ortho.up.set(0, 1, 0); controls.target.set(0, 0, 0); ortho.lookAt(0, 0, 0); fitCam(); controls.update(); }
+function fitCam() { const a = outW / outH || 1, span = R * (view === "top" ? 1.25 : a >= 1 ? 1.55 : 1.62 / Math.min(1, a * 1.12));   // tall frames: the turned model is wider than it is high
+  if (a >= 1) Object.assign(ortho, { left: -span * a, right: span * a, top: span, bottom: -span }); else Object.assign(ortho, { left: -span, right: span, top: span / a, bottom: -span / a });
+  ortho.zoom = view === "top" ? 1 : 1.05; ortho.updateProjectionMatrix();
+  if (EV.camera) persp.fov = 2 * Math.atan(Math.tan(EV.camera.fov * Math.PI / 360) / a) * 180 / Math.PI; persp.aspect = a; persp.updateProjectionMatrix(); }
+document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => setView(b.dataset.view)); if (!camPos) document.querySelector('[data-view="eye"]').disabled = true;
+$("spin").onclick = () => { spin = !spin; $("spin").setAttribute("aria-pressed", spin); };
+
+// ------------------------------------------------------------------ overlay: title, north arrow, sources
+function font(w, px) { return `${w} ${Math.round(px * u)}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`; }
+function wrap(text, maxW) { const out = []; let cur = ""; for (const w of String(text).split(/\s+/)) { const t = cur ? cur + " " + w : w; if (g2.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; } if (cur) out.push(cur); return out; }
+function overlay() {
+  g2.clearRect(0, 0, outW, outH); const pad = 40 * u;
+  g2.fillStyle = "#3e8e35"; g2.font = font(800, 20); g2.fillText(view === "eye" ? "APPROXIMATE VIEW FROM THE CAMERA POSITION" : "SCENE", pad, pad + 16 * u);
+  g2.fillStyle = "#1f2428"; g2.font = font(800, 46); const tl = wrap(D.title, outW - 2 * pad - 120 * u); tl.slice(0, 2).forEach((l, i) => g2.fillText(l, pad, pad + (68 + 52 * i) * u));
+  g2.fillStyle = "#5b5f63"; g2.font = font(600, 22); g2.fillText([D.place, `${D.lat.toFixed(4)}, ${D.lon.toFixed(4)}`, `${Math.round(2 * R)} m across`].filter(Boolean).join("  ·  "), pad, pad + (68 + 52 * Math.min(2, tl.length) - 14) * u + 22 * u);
+  // north arrow from the projected direction of north
+  const o = new THREE.Vector3(0, 0, 0).project(cam), n = new THREE.Vector3(0, 0, -20).project(cam), ang = Math.atan2(-(n.y - o.y) * outH, (n.x - o.x) * outW);
+  const cx = outW - pad - 34 * u, cy = pad + 40 * u; g2.save(); g2.translate(cx, cy); g2.rotate(-ang + Math.PI / 2 * 0); g2.rotate(Math.PI / 2 - ang - Math.PI / 2);
+  g2.fillStyle = "rgba(255,255,255,.9)"; g2.beginPath(); g2.arc(0, 0, 30 * u, 0, 7); g2.fill(); g2.fillStyle = "#c2372b"; g2.beginPath(); g2.moveTo(22 * u, 0); g2.lineTo(-10 * u, -9 * u); g2.lineTo(-10 * u, 9 * u); g2.fill();
+  g2.restore(); g2.fillStyle = "#1f2428"; g2.font = font(800, 18); g2.textAlign = "center"; g2.fillText("N", cx + Math.cos(-ang) * 0 , cy + 50 * u + 14 * u); g2.textAlign = "start";
+  if (view === "eye") { g2.fillStyle = "rgba(31,36,40,.8)"; g2.font = font(600, 19); wrap("Buildings drawn from OpenStreetMap, heights from tags or estimated. Use this to compare outlines and positions with the footage, not as a photograph.", outW - 2 * pad).forEach((l, i) => g2.fillText(l, pad, outH - 80 * u + i * 24 * u)); }
+  g2.font = font(500, 16); g2.fillStyle = "rgba(31,36,40,.75)";
+  const src = `${D.source ? "Evidence: " + D.source + ". " : ""}Map data © OpenStreetMap contributors (ODbL)${D.osm_time ? ", " + D.osm_time.slice(0, 10) : ""}. Made with osint-visuals.`;
+  wrap(src, outW - 2 * pad).slice(0, 2).reverse().forEach((l, i) => g2.fillText(l, pad, outH - 18 * u - i * 21 * u));
+}
+
+// ------------------------------------------------------------------ size, loop, export
+function layout() { const W = innerWidth, H = innerHeight - 64, f = FMT[fmt]; let cw, ch;
+  if (!f) { cw = W; ch = H; } else { const s = Math.min(W / f[0], H / f[1]); cw = Math.floor(f[0] * s); ch = Math.floor(f[1] * s); }
+  $("stage").style.width = cw + "px"; $("stage").style.height = ch + "px";
+  outW = f ? f[0] : Math.round(cw * devicePixelRatio); outH = f ? f[1] : Math.round(ch * devicePixelRatio); S = outW / cw; u = Math.min(outW, outH) / 1000;
+  renderer.setPixelRatio(S); renderer.setSize(cw, ch, true); ov.width = outW; ov.height = outH; ov.style.width = cw + "px"; ov.style.height = ch + "px";
+  fitCam(); }
+function sizeLabels() {   // labels keep the same size on screen: about 34 px tall per 1000 px of frame
+  const px = 0.034 * Math.min(outW, outH) / 1000 * 1000 / outH;   // fraction of the frame height
+  labels.forEach(l => { const k = l.userData.h / 64, hf = px * k * (l.userData.big ? 1.25 : 1);
+    if (cam.isPerspectiveCamera) { const h = hf * 2 * Math.tan(cam.fov * Math.PI / 360); l.scale.set(h * l.userData.w / l.userData.h, h, 1); }
+    else { const h = hf * (ortho.top - ortho.bottom) / ortho.zoom; l.scale.set(h * l.userData.w / l.userData.h, h, 1); } }); }
+let t0 = performance.now();
+function loop(now) { const dt = (now - t0) / 1000; t0 = now;
+  if (spin && view !== "eye") { const a = 0.35 * dt, p = ortho.position; ortho.position.set(p.x * Math.cos(a) - p.z * Math.sin(a), p.y, p.x * Math.sin(a) + p.z * Math.cos(a)); ortho.lookAt(controls.target); }
+  if (evidence.userData.ring) { const k = (now / 1400) % 1; evidence.userData.ring.scale.setScalar(1 + k * 1.6); evidence.userData.ring.material.opacity = 1 - k; }
+  controls.update(); sizeLabels(); if (cam.isPerspectiveCamera) labels.forEach(l => { const d = l.position.distanceTo(cam.position); l.scale.multiplyScalar(d); });
+  renderer.render(scene, cam); overlay(); recording?.paint(); requestAnimationFrame(loop); }
+const slug = () => (D.title || "scene").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+function save(blob, ext) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${slug()}-${view}.${ext}`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+function compose(c) { const x = c.getContext("2d"); x.drawImage(gl, 0, 0, outW, outH); x.drawImage(ov, 0, 0); return c; }
+$("png").onclick = () => { const c = document.createElement("canvas"); c.width = outW; c.height = outH; compose(c).toBlob(b => save(b, "png")); };
+$("rec").onclick = () => { if (recording || view === "eye") return; const c = document.createElement("canvas"); c.width = outW; c.height = outH;
+  const type = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"].find(m => MediaRecorder.isTypeSupported(m));
+  const rec = new MediaRecorder(c.captureStream(30), { mimeType: type, videoBitsPerSecond: 12e6 }), parts = [], was = spin;
+  rec.ondataavailable = e => parts.push(e.data); rec.onstop = () => { save(new Blob(parts, { type: "video/webm" }), "webm"); recording = null; spin = was; $("rec").textContent = "● Record orbit"; };
+  recording = { paint: () => compose(c) }; spin = true; $("rec").textContent = "Recording…"; rec.start(); setTimeout(() => rec.stop(), 2 * Math.PI / 0.35 * 1000); };
+$("fmt").onchange = e => { fmt = e.target.value; layout(); };
+addEventListener("resize", layout);
+const q = new URLSearchParams(location.search); if (q.get("fmt") && FMT[q.get("fmt")] !== undefined) { fmt = q.get("fmt"); $("fmt").value = fmt; }
+layout(); setView(q.get("view") || "iso"); requestAnimationFrame(loop);
+</script>
+</body></html>
