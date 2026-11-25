@@ -3,13 +3,14 @@
 **Evidence graphics for open-source investigations, made by your AI agent.** Ask in plain words and get a
 publication-ready visual that carries its own sources: an animated ship track that flags where it went dark, a shadow
 diagram that tests a claimed time, a 3D miniature of the scene with the camera's line of sight, a newsroom locator
-map, a before-and-after satellite slider, or a whole scrolling map story.
+map, a before-and-after satellite slider, a whole scrolling map story, or a cyber campaign timeline with its
+confidence and sources intact.
 
-Six skills in the open [Agent Skills](https://agentskills.io) format, for Claude Code and other agents. Each one
-writes **a single HTML file**. The five graphics have export built in: PNG for all five, WebM video for track-map,
-scene-diorama and before-after, SVG for shadow-diagram and locator-map. The scroll story can also be written as a
-Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only (on Windows, `--tz` zone names need
-`pip install tzdata`; offsets like +03:00 work everywhere), no API keys.
+Eight skills in the open [Agent Skills](https://agentskills.io) format, for Claude Code and other agents. Each one
+writes **a single HTML file**. The seven graphics have export built in: PNG for all seven, WebM video for track-map,
+scene-diorama and before-after, SVG for shadow-diagram, locator-map, stix-timeline and attack-coverage. The scroll
+story can also be written as a Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only (on
+Windows, `--tz` zone names need `pip install tzdata`; offsets like +03:00 work everywhere), no API keys.
 
 | | |
 |---|---|
@@ -20,11 +21,21 @@ Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only 
 | ![A before-and-after slider of Lahaina, Maui, on 29 July and 18 August 2023](docs/gallery/before-after.png) | ![A scroll story: a map step with a marker on a desktop screen, and a satellite picture step on a phone](docs/gallery/scroll-story.png) |
 | **before-after**: a slider readers can drag, from free NASA imagery (the clearest pass near each date is picked for you) or your own licensed images. | **scroll-story**: a plain-text script becomes a scrolling story: the map flies between places, pictures change, the before/after divider moves with the scroll. Also as a Svelte project. |
 
+Two more skills cover cyber and conflict material:
+
+- **stix-timeline**: a STIX 2.1 bundle (MISP, OpenCTI or hand-written) becomes a timeline of actors, campaigns,
+  infrastructure, malware, techniques, indicators and reports, with confidence and sources kept visible.
+- **attack-coverage**: your technique counts become an ATT&CK matrix, with sources and notes on the graphic.
+
+Both are offline, and both demos are fictional: [open the timeline](examples/stix/demo-campaign-timeline.html) built
+from [this bundle](examples/stix/demo-campaign.json), and [open the matrix](examples/attack/demo-coverage-matrix.html)
+built from [this CSV](examples/attack/demo-coverage.csv).
+
 ![The approximate view from the camera position in the diorama](docs/gallery/scene-diorama-camera-view.png)
 
 *The diorama's camera's view: the scene from where the footage was filmed, to compare with the frame.*
 
-The track, shadow, diorama and locator examples use invented scenarios (fictional ships, claims and events) on real
+The track, shadow, diorama, locator, stix-timeline and attack-coverage examples use invented scenarios on real
 maps. The before-after and scroll-story examples use real NASA imagery of Lahaina, Maui, before and after the
 wildfire of 8 August 2023.
 
@@ -101,6 +112,8 @@ python3 skills/locator-map/scripts/locator.py --place "Beira, Mozambique" --titl
 python3 skills/before-after/scripts/before_after.py --lat 20.873 --lon -156.677 --km 1.8 \
     --before 2023-08-05 --after 2023-08-10 --title "Lahaina before and after the fire"
 python3 skills/scroll-story/scripts/story.py examples/scroll-story/demo.md --svelte story-app/
+python3 skills/stix-timeline/scripts/stix.py examples/stix/demo-campaign.json --title "A campaign timeline"
+python3 skills/attack-coverage/scripts/attack.py examples/attack/demo-coverage.csv --title "ATT&CK coverage"
 ```
 
 Each prints what it found (gaps, windows, matches) and writes the page. Open it in a browser, pick a frame (16:9, 1:1,
@@ -119,6 +132,8 @@ OpenFreeMap, so they need a connection when opened. The shadow and before-after 
 | shadow-diagram | none | Sun positions computed locally (NOAA equations). |
 | before-after | your images, or [NASA GIBS](https://www.earthdata.nasa.gov/gibs) (HLS, VIIRS, MODIS) | Keyless; the graphic credits NASA GIBS and, for HLS Sentinel-2, "contains modified Copernicus Sentinel data". The date search fetches up to one small preview per day, from the asked-for date out to 12 days before or after (`--window`), stopping early at a clear pass; cached. Your own images: their owner's terms. |
 | scroll-story | your script and images; map steps from OpenFreeMap | Map credit in the page's sources footer; every image needs its own credit. |
+| stix-timeline | your STIX 2.1 bundle | Your bundle's handling rules apply. The page makes no requests; source links open only when clicked. |
+| attack-coverage | your counts; technique IDs and names from MITRE ATT&CK | MITRE attribution is drawn on every export. Counts, mappings and notes are your input. |
 
 The scripts' downloads are cached in `~/.cache/osint-visuals` and never expire; delete a file there to fetch fresh
 OpenStreetMap data. The scripts send an identifying User-Agent and only what each lookup needs (the place name, or the
@@ -130,6 +145,8 @@ which see your IP address and the area you are viewing: keep that in mind for se
 - Track, map or model a private person: their home, their movements, the window they filmed from.
 - Present an inference as a finding: a meeting at sea is not a transfer, a matching shadow is not proof of a time, and
   the camera's view is an approximation, not a photograph.
+- Publish credentials, victim PII or unpatched-vulnerability detail that a STIX bundle happens to contain.
+- Turn a timeline or a coverage matrix into a target list, or rank actors for targeting.
 
 These limits are written into the skills. If you fork the pack, please keep them.
 
@@ -142,6 +159,9 @@ These limits are written into the skills. If you fork the pack, please keep them
 - Locator borders follow Natural Earth's de facto lines. For disputed areas, follow your outlet's style guide.
 - Free NASA HLS imagery is 30 m a pixel: single buildings are not visible, and some places (remote islands, some ocean
   areas) have no data on many dates. For detail, use licensed commercial imagery with `--before-image`/`--after-image`.
+- STIX dates are record dates: `created` is when the object was written, not when the event happened. A confidence
+  value is the producer's estimate.
+- ATT&CK coverage shows only the techniques you supplied. The skill bundles no matrix and does not validate IDs.
 
 ## Tests
 
@@ -152,7 +172,8 @@ python3 -m unittest discover -s tests
 The tests run offline: track analysis on the regenerated demo data, the sun position against a known value (London's
 noon sun at the December solstice), the shadow windows and claim check, page writing for track, shadow and
 before-after, the diorama and locator geometry helpers, the PNG reader and cloud score used to pick clear satellite
-passes, and the scroll-story parser, its text escaping and its Svelte export.
+passes, the scroll-story parser, its text escaping and its Svelte export, and the STIX timeline and ATT&CK matrix
+parsers, aggregation, filters, page writing and escaping.
 
 ## Related
 

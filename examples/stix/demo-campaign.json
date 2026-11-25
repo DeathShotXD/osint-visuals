@@ -1,0 +1,226 @@
+{
+  "type": "bundle",
+  "id": "bundle--5c1f0d2a-0000-4000-8000-000000000001",
+  "spec_version": "2.1",
+  "objects": [
+    {
+      "type": "threat-actor",
+      "id": "threat-actor--5c1f0d2a-0000-4000-8000-000000000010",
+      "created": "2026-01-12T09:00:00Z",
+      "modified": "2026-06-02T10:00:00Z",
+      "name": "SABLE KITE",
+      "description": "Fictional intrusion set used to demonstrate this skill. Not a real group, campaign or victim.",
+      "confidence": 60,
+      "labels": ["fictional", "financially-motivated"],
+      "external_references": [
+        {"source_name": "Fictional advisory", "url": "https://example.org/advisory/sable-kite"}
+      ]
+    },
+    {
+      "type": "campaign",
+      "id": "campaign--5c1f0d2a-0000-4000-8000-000000000020",
+      "created": "2026-02-03T08:30:00Z",
+      "modified": "2026-05-20T17:00:00Z",
+      "name": "OPERATION GLASS HARBOR",
+      "first_seen": "2026-02-03T08:30:00Z",
+      "last_seen": "2026-05-20T17:00:00Z",
+      "description": "Fictional campaign against logistics and port operators, invented for the demo. The dates are the only structured evidence; attribution is an assessment, not a fact.",
+      "confidence": 55,
+      "labels": ["fictional"],
+      "external_references": [
+        {"source_name": "Fictional advisory", "url": "https://example.org/advisory/glass-harbor"}
+      ]
+    },
+    {
+      "type": "infrastructure",
+      "id": "infrastructure--5c1f0d2a-0000-4000-8000-000000000030",
+      "created": "2026-02-10T12:00:00Z",
+      "name": "glass-harbor-c2.example",
+      "description": "Fictional command-and-control domain. Reserved example domain, never routable.",
+      "confidence": 70,
+      "labels": ["fictional", "command-and-control"]
+    },
+    {
+      "type": "malware",
+      "id": "malware--5c1f0d2a-0000-4000-8000-000000000040",
+      "created": "2026-02-14T15:20:00Z",
+      "name": "GRAYFIN loader",
+      "description": "Fictional loader family. No hashes or samples are included.",
+      "confidence": 65,
+      "labels": ["fictional", "loader"],
+      "external_references": [
+        {"source_name": "Fictional malware note", "url": "https://example.org/malware/grayfin"}
+      ]
+    },
+    {
+      "type": "tool",
+      "id": "tool--5c1f0d2a-0000-4000-8000-000000000050",
+      "created": "2026-03-02T11:10:00Z",
+      "name": "Living-off-the-land shell",
+      "description": "Fictional use of built-in administration tools after access. Named generically so the demo does not read as a real tool attribution.",
+      "confidence": 40,
+      "labels": ["fictional"]
+    },
+    {
+      "type": "attack-pattern",
+      "id": "attack-pattern--5c1f0d2a-0000-4000-8000-000000000060",
+      "created": "2026-02-04T09:00:00Z",
+      "name": "Phishing",
+      "description": "Initial access by a fictional lure. Technique mapping follows MITRE ATT&CK.",
+      "confidence": 50,
+      "kill_chain_phases": [{"kill_chain_name": "mitre-attack", "phase_name": "initial-access"}],
+      "external_references": [
+        {"source_name": "mitre-attack", "external_id": "T1566", "url": "https://attack.mitre.org/techniques/T1566/"}
+      ]
+    },
+    {
+      "type": "attack-pattern",
+      "id": "attack-pattern--5c1f0d2a-0000-4000-8000-000000000061",
+      "created": "2026-02-20T13:00:00Z",
+      "name": "Command and Scripting Interpreter",
+      "description": "Fictional post-access scripting. Technique mapping follows MITRE ATT&CK.",
+      "confidence": 45,
+      "kill_chain_phases": [{"kill_chain_name": "mitre-attack", "phase_name": "execution"}],
+      "external_references": [
+        {"source_name": "mitre-attack", "external_id": "T1059", "url": "https://attack.mitre.org/techniques/T1059/"}
+      ]
+    },
+    {
+      "type": "attack-pattern",
+      "id": "attack-pattern--5c1f0d2a-0000-4000-8000-000000000062",
+      "created": "2026-03-05T10:30:00Z",
+      "name": "Application Layer Protocol",
+      "description": "Fictional beaconing over a common protocol. Technique mapping follows MITRE ATT&CK.",
+      "confidence": 55,
+      "kill_chain_phases": [{"kill_chain_name": "mitre-attack", "phase_name": "command-and-control"}],
+      "external_references": [
+        {"source_name": "mitre-attack", "external_id": "T1071", "url": "https://attack.mitre.org/techniques/T1071/"}
+      ]
+    },
+    {
+      "type": "vulnerability",
+      "id": "vulnerability--5c1f0d2a-0000-4000-8000-000000000070",
+      "created": "2026-03-18T08:00:00Z",
+      "name": "Edge gateway authentication bypass (fictional)",
+      "description": "Fictional flaw in an invented edge appliance. No CVE is assigned because the product does not exist.",
+      "confidence": 45,
+      "labels": ["fictional", "initial-access"]
+    },
+    {
+      "type": "indicator",
+      "id": "indicator--5c1f0d2a-0000-4000-8000-000000000080",
+      "created": "2026-03-20T14:00:00Z",
+      "name": "update-check.example",
+      "valid_from": "2026-03-20T14:00:00Z",
+      "valid_until": "2026-04-30T14:00:00Z",
+      "description": "Fictional domain indicator, reserved example name.",
+      "confidence": 80,
+      "labels": ["fictional", "domain"]
+    },
+    {
+      "type": "observed-data",
+      "id": "observed-data--5c1f0d2a-0000-4000-8000-000000000090",
+      "created": "2026-03-24T07:00:00Z",
+      "first_seen": "2026-03-21T22:00:00Z",
+      "last_seen": "2026-03-23T06:00:00Z",
+      "name": "Beaconing observed at a fictional port operator",
+      "description": "Fictional observation window. The victim is described by sector only; no organisation is named.",
+      "confidence": 70,
+      "labels": ["fictional"]
+    },
+    {
+      "type": "report",
+      "id": "report--5c1f0d2a-0000-4000-8000-0000000000a0",
+      "created": "2026-06-01T09:00:00Z",
+      "published": "2026-06-01T09:00:00Z",
+      "name": "Fictional joint advisory on GLASS HARBOR",
+      "description": "Invented advisory used as a source record for the demo.",
+      "confidence": 70,
+      "labels": ["fictional"],
+      "external_references": [
+        {"source_name": "Fictional advisory", "url": "https://example.org/advisory/glass-harbor"}
+      ]
+    },
+    {
+      "type": "course-of-action",
+      "id": "course-of-action--5c1f0d2a-0000-4000-8000-0000000000b0",
+      "created": "2026-06-02T09:00:00Z",
+      "name": "Patch the edge gateway and rotate credentials",
+      "description": "Fictional mitigation. In a real bundle this would carry the vendor advisory link.",
+      "confidence": 50,
+      "labels": ["fictional", "mitigation"]
+    },
+    {
+      "type": "relationship",
+      "id": "relationship--5c1f0d2a-0000-4000-8000-0000000000c0",
+      "created": "2026-06-02T09:05:00Z",
+      "relationship_type": "uses",
+      "source_ref": "threat-actor--5c1f0d2a-0000-4000-8000-000000000010",
+      "target_ref": "campaign--5c1f0d2a-0000-4000-8000-000000000020"
+    },
+    {
+      "type": "relationship",
+      "id": "relationship--5c1f0d2a-0000-4000-8000-0000000000c1",
+      "created": "2026-06-02T09:06:00Z",
+      "relationship_type": "uses",
+      "source_ref": "campaign--5c1f0d2a-0000-4000-8000-000000000020",
+      "target_ref": "infrastructure--5c1f0d2a-0000-4000-8000-000000000030"
+    },
+    {
+      "type": "relationship",
+      "id": "relationship--5c1f0d2a-0000-4000-8000-0000000000c2",
+      "created": "2026-06-02T09:07:00Z",
+      "relationship_type": "uses",
+      "source_ref": "campaign--5c1f0d2a-0000-4000-8000-000000000020",
+      "target_ref": "malware--5c1f0d2a-0000-4000-8000-000000000040"
+    },
+    {
+      "type": "relationship",
+      "id": "relationship--5c1f0d2a-0000-4000-8000-0000000000c3",
+      "created": "2026-06-02T09:08:00Z",
+      "relationship_type": "uses",
+      "source_ref": "malware--5c1f0d2a-0000-4000-8000-000000000040",
+      "target_ref": "attack-pattern--5c1f0d2a-0000-4000-8000-000000000061"
+    },
+    {
+      "type": "relationship",
+      "id": "relationship--5c1f0d2a-0000-4000-8000-0000000000c4",
+      "created": "2026-06-02T09:09:00Z",
+      "relationship_type": "targets",
+      "source_ref": "campaign--5c1f0d2a-0000-4000-8000-000000000020",
+      "target_ref": "vulnerability--5c1f0d2a-0000-4000-8000-000000000070"
+    },
+    {
+      "type": "relationship",
+      "id": "relationship--5c1f0d2a-0000-4000-8000-0000000000c5",
+      "created": "2026-06-02T09:10:00Z",
+      "relationship_type": "indicates",
+      "source_ref": "indicator--5c1f0d2a-0000-4000-8000-000000000080",
+      "target_ref": "malware--5c1f0d2a-0000-4000-8000-000000000040"
+    },
+    {
+      "type": "relationship",
+      "id": "relationship--5c1f0d2a-0000-4000-8000-0000000000c6",
+      "created": "2026-06-02T09:11:00Z",
+      "relationship_type": "related-to",
+      "source_ref": "observed-data--5c1f0d2a-0000-4000-8000-000000000090",
+      "target_ref": "indicator--5c1f0d2a-0000-4000-8000-000000000080"
+    },
+    {
+      "type": "relationship",
+      "id": "relationship--5c1f0d2a-0000-4000-8000-0000000000c7",
+      "created": "2026-06-02T09:12:00Z",
+      "relationship_type": "describes",
+      "source_ref": "report--5c1f0d2a-0000-4000-8000-0000000000a0",
+      "target_ref": "campaign--5c1f0d2a-0000-4000-8000-000000000020"
+    },
+    {
+      "type": "relationship",
+      "id": "relationship--5c1f0d2a-0000-4000-8000-0000000000c8",
+      "created": "2026-06-02T09:13:00Z",
+      "relationship_type": "mitigates",
+      "source_ref": "course-of-action--5c1f0d2a-0000-4000-8000-0000000000b0",
+      "target_ref": "vulnerability--5c1f0d2a-0000-4000-8000-000000000070"
+    }
+  ]
+}

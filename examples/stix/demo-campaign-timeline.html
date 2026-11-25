@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operation Glass Harbor: a fictional campaign · cyber timeline</title>
+<!-- Written by osint-visuals stix-timeline (stix.py). One self-contained page: the STIX objects are embedded
+     below and drawn as an SVG timeline. No network, no library, no key. -->
+<style>
+  :root { --bg:#0b0f13; --panel:#121820; --ink:#eef2f0; --dim:#9aa7b0; --line:#23303a; --accent:#4fd1c5;
+          --actor:#f07178; --campaign:#f2a65a; --infrastructure:#9d8df1; --malware:#e05c8a; --technique:#4fd1c5;
+          --vulnerability:#f5d76e; --indicator:#7ec8f2; --observation:#8fbf7f; --report:#c0c8d0; --mitigation:#6ee7b7; }
+  [data-theme="light"] { --bg:#f6f3ec; --panel:#fffdf8; --ink:#1e2529; --dim:#63707a; --line:#ddd5c6;
+          --actor:#c0392b; --campaign:#b9770e; --infrastructure:#6c5ce7; --malware:#a8326d; --technique:#0f766e;
+          --vulnerability:#9a7d0a; --indicator:#1f6fa8; --observation:#3f7d3a; --report:#5b6770; --mitigation:#0f8a5f; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding:22px 22px 40px; }
+  header { max-width:1600px; margin:0 auto 14px; }
+  .kicker { font:800 11px/1 ui-monospace, monospace; letter-spacing:.18em; color:var(--dim); text-transform:uppercase; }
+  h1 { font-size:clamp(22px, 2.4vw, 34px); margin:.25em 0 .12em; letter-spacing:-.01em; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .sub { color:var(--dim); max-width:1100px; }
+  .bar { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin:14px auto 10px; max-width:1600px;
+         padding:10px 12px; background:var(--panel); border:1px solid var(--line); border-radius:10px; }
+  .bar label { display:flex; align-items:center; gap:6px; color:var(--dim); font-size:12px; cursor:pointer; }
+  .bar input[type="range"] { accent-color:var(--accent); width:130px; }
+  .bar button, .bar select { font:600 12px system-ui, sans-serif; color:var(--ink); background:var(--bg);
+         border:1px solid var(--line); border-radius:7px; padding:7px 10px; cursor:pointer; }
+  .bar button:hover, .bar select:hover { border-color:var(--accent); }
+  .bar .sp { flex:1; }
+  .swatch { width:9px; height:9px; border-radius:2px; display:inline-block; }
+  main { max-width:1600px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:14px; }
+  #chart { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:6px; overflow:auto; }
+  #chart svg { display:block; width:100%; height:auto; }
+  #side { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; min-height:220px; }
+  #side h2 { font-size:15px; margin:0 0 6px; }
+  #side .meta { color:var(--dim); font-size:12px; margin-bottom:10px; }
+  #side .desc { font-size:13px; margin:10px 0; white-space:pre-wrap; }
+  #side .tag { display:inline-block; font:600 11px ui-monospace, monospace; color:var(--dim);
+         border:1px solid var(--line); border-radius:5px; padding:2px 6px; margin:0 4px 4px 0; }
+  #side a { color:var(--accent); }
+  #side .hint { color:var(--dim); font-size:12px; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  table th, table td { text-align:left; padding:6px 7px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table th { color:var(--dim); font-weight:700; position:sticky; top:0; background:var(--panel); }
+  #table { display:none; max-height:70vh; overflow:auto; }
+  footer { max-width:1600px; margin:12px auto 0; color:var(--dim); font-size:11px; }
+  @media (max-width:900px) { main { grid-template-columns:1fr; } #side { min-height:0; } }
+</style></head>
+<body>
+<header>
+  <div class="kicker">Cyber timeline / STIX 2.1</div>
+  <h1 class="sr-only">Operation Glass Harbor: a fictional campaign</h1>
+</header>
+
+<div class="bar" id="filters"></div>
+
+<main>
+  <div id="chart"></div>
+  <aside id="side"><h2>Details</h2><div class="hint">Select an object on the timeline. Sources and confidence stay visible.</div></aside>
+</main>
+
+<div id="table"></div>
+
+<footer id="foot"></footer>
+
+<script>
+const D = {"events":[{"id":"threat-actor--5c1f0d2a-0000-4000-8000-000000000010","lane":"actor","type":"threat-actor","name":"SABLE KITE","start":"2026-01-12T09:00:00+00:00","end":null,"confidence":60,"description":"Fictional intrusion set used to demonstrate this skill. Not a real group, campaign or victim.","labels":["fictional","financially-motivated"],"sources":[{"label":"Fictional advisory","url":"https://example.org/advisory/sable-kite"}],"techniques":[]},{"id":"campaign--5c1f0d2a-0000-4000-8000-000000000020","lane":"campaign","type":"campaign","name":"OPERATION GLASS HARBOR","start":"2026-02-03T08:30:00+00:00","end":"2026-05-20T17:00:00+00:00","confidence":55,"description":"Fictional campaign against logistics and port operators, invented for the demo. The dates are the only structured evidence; attribution is an assessment, not a fact.","labels":["fictional"],"sources":[{"label":"Fictional advisory","url":"https://example.org/advisory/glass-harbor"}],"techniques":[]},{"id":"attack-pattern--5c1f0d2a-0000-4000-8000-000000000060","lane":"technique","type":"attack-pattern","name":"Phishing","start":"2026-02-04T09:00:00+00:00","end":null,"confidence":50,"description":"Initial access by a fictional lure. Technique mapping follows MITRE ATT\u0026CK.","labels":[],"sources":[{"label":"mitre-attack","url":"https://attack.mitre.org/techniques/T1566/"}],"techniques":["initial-access"]},{"id":"infrastructure--5c1f0d2a-0000-4000-8000-000000000030","lane":"infrastructure","type":"infrastructure","name":"glass-harbor-c2.example","start":"2026-02-10T12:00:00+00:00","end":null,"confidence":70,"description":"Fictional command-and-control domain. Reserved example domain, never routable.","labels":["fictional","command-and-control"],"sources":[],"techniques":[]},{"id":"malware--5c1f0d2a-0000-4000-8000-000000000040","lane":"malware","type":"malware","name":"GRAYFIN loader","start":"2026-02-14T15:20:00+00:00","end":null,"confidence":65,"description":"Fictional loader family. No hashes or samples are included.","labels":["fictional","loader"],"sources":[{"label":"Fictional malware note","url":"https://example.org/malware/grayfin"}],"techniques":[]},{"id":"attack-pattern--5c1f0d2a-0000-4000-8000-000000000061","lane":"technique","type":"attack-pattern","name":"Command and Scripting Interpreter","start":"2026-02-20T13:00:00+00:00","end":null,"confidence":45,"description":"Fictional post-access scripting. Technique mapping follows MITRE ATT\u0026CK.","labels":[],"sources":[{"label":"mitre-attack","url":"https://attack.mitre.org/techniques/T1059/"}],"techniques":["execution"]},{"id":"tool--5c1f0d2a-0000-4000-8000-000000000050","lane":"malware","type":"tool","name":"Living-off-the-land shell","start":"2026-03-02T11:10:00+00:00","end":null,"confidence":40,"description":"Fictional use of built-in administration tools after access. Named generically so the demo does not read as a real tool attribution.","labels":["fictional"],"sources":[],"techniques":[]},{"id":"attack-pattern--5c1f0d2a-0000-4000-8000-000000000062","lane":"technique","type":"attack-pattern","name":"Application Layer Protocol","start":"2026-03-05T10:30:00+00:00","end":null,"confidence":55,"description":"Fictional beaconing over a common protocol. Technique mapping follows MITRE ATT\u0026CK.","labels":[],"sources":[{"label":"mitre-attack","url":"https://attack.mitre.org/techniques/T1071/"}],"techniques":["command-and-control"]},{"id":"vulnerability--5c1f0d2a-0000-4000-8000-000000000070","lane":"vulnerability","type":"vulnerability","name":"Edge gateway authentication bypass (fictional)","start":"2026-03-18T08:00:00+00:00","end":null,"confidence":45,"description":"Fictional flaw in an invented edge appliance. No CVE is assigned because the product does not exist.","labels":["fictional","initial-access"],"sources":[],"techniques":[]},{"id":"indicator--5c1f0d2a-0000-4000-8000-000000000080","lane":"indicator","type":"indicator","name":"update-check.example","start":"2026-03-20T14:00:00+00:00","end":"2026-04-30T14:00:00+00:00","confidence":80,"description":"Fictional domain indicator, reserved example name.","labels":["fictional","domain"],"sources":[],"techniques":[]},{"id":"observed-data--5c1f0d2a-0000-4000-8000-000000000090","lane":"observation","type":"observed-data","name":"Beaconing observed at a fictional port operator","start":"2026-03-21T22:00:00+00:00","end":"2026-03-23T06:00:00+00:00","confidence":70,"description":"Fictional observation window. The victim is described by sector only; no organisation is named.","labels":["fictional"],"sources":[],"techniques":[]},{"id":"report--5c1f0d2a-0000-4000-8000-0000000000a0","lane":"report","type":"report","name":"Fictional joint advisory on GLASS HARBOR","start":"2026-06-01T09:00:00+00:00","end":null,"confidence":70,"description":"Invented advisory used as a source record for the demo.","labels":["fictional"],"sources":[{"label":"Fictional advisory","url":"https://example.org/advisory/glass-harbor"}],"techniques":[]},{"id":"course-of-action--5c1f0d2a-0000-4000-8000-0000000000b0","lane":"mitigation","type":"course-of-action","name":"Patch the edge gateway and rotate credentials","start":"2026-06-02T09:00:00+00:00","end":null,"confidence":50,"description":"Fictional mitigation. In a real bundle this would carry the vendor advisory link.","labels":["fictional","mitigation"],"sources":[],"techniques":[]}],"links":[{"from":"SABLE KITE","to":"OPERATION GLASS HARBOR","kind":"uses"},{"from":"OPERATION GLASS HARBOR","to":"glass-harbor-c2.example","kind":"uses"},{"from":"OPERATION GLASS HARBOR","to":"GRAYFIN loader","kind":"uses"},{"from":"GRAYFIN loader","to":"Command and Scripting Interpreter","kind":"uses"},{"from":"OPERATION GLASS HARBOR","to":"Edge gateway authentication bypass (fictional)","kind":"targets"},{"from":"update-check.example","to":"GRAYFIN loader","kind":"indicates"},{"from":"Beaconing observed at a fictional port operator","to":"update-check.example","kind":"related-to"},{"from":"Fictional joint advisory on GLASS HARBOR","to":"OPERATION GLASS HARBOR","kind":"describes"},{"from":"Patch the edge gateway and rotate credentials","to":"Edge gateway authentication bypass (fictional)","kind":"mitigates"}],"counts":{"actor":1,"campaign":1,"infrastructure":1,"malware":2,"technique":3,"vulnerability":1,"indicator":1,"observation":1,"report":1,"mitigation":1},"skipped":0,"range":["2026-01-12T09:00:00+00:00","2026-06-02T09:00:00+00:00"],"lanes":[{"key":"actor","label":"Threat actors","types":"intrusion-set, threat-actor"},{"key":"campaign","label":"Campaigns","types":"campaign"},{"key":"infrastructure","label":"Infrastructure","types":"infrastructure"},{"key":"malware","label":"Malware and tools","types":"malware, tool"},{"key":"technique","label":"Techniques","types":"attack-pattern"},{"key":"vulnerability","label":"Vulnerabilities","types":"vulnerability"},{"key":"indicator","label":"Indicators","types":"indicator"},{"key":"observation","label":"Observations","types":"observed-data"},{"key":"report","label":"Reports","types":"report"},{"key":"mitigation","label":"Mitigations","types":"course-of-action"}],"types":["attack-pattern","campaign","course-of-action","indicator","infrastructure","malware","observed-data","report","threat-actor","tool","vulnerability"],"title":"Operation Glass Harbor: a fictional campaign","subtitle":"STIX 2.1 objects placed on a timeline, with confidence and sources kept visible","source":"Fictional demo bundle, invented for this skill","theme":"dark","generated":"2026-11-25 17:20 UTC","input":"demo-campaign.json"};
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const COL = { actor:"var(--actor)", campaign:"var(--campaign)", infrastructure:"var(--infrastructure)",
+  malware:"var(--malware)", technique:"var(--technique)", vulnerability:"var(--vulnerability)",
+  indicator:"var(--indicator)", observation:"var(--observation)", report:"var(--report)", mitigation:"var(--mitigation)" };
+const W = 1600, H = 860, ML = 190, MR = 50, MT = 120, MB = 70;
+const active = new Set(D.lanes.filter(l => D.counts[l.key]).map(l => l.key));
+let selected = null;
+
+document.documentElement.dataset.theme = D.theme || "dark";
+$("foot").textContent = `${D.source ? "Source: " + D.source + ". " : "Source not stated. "}Generated ${D.generated} from ${D.input}. ` +
+  "Dates are as recorded in the bundle; confidence is not proof. Made with osint-visuals.";
+
+// ---------------------------------------------------------------- filters
+const lanesShown = D.lanes.filter(l => D.counts[l.key]);
+for (const lane of lanesShown) {
+  const label = document.createElement("label");
+  const cb = document.createElement("input");
+  cb.type = "checkbox"; cb.checked = true;
+  cb.onchange = () => { cb.checked ? active.add(lane.key) : active.delete(lane.key); draw(); };
+  const sw = document.createElement("span");
+  sw.className = "swatch"; sw.style.background = COL[lane.key];
+  label.append(cb, sw, document.createTextNode(`${lane.label} (${D.counts[lane.key]})`));
+  $("filters").append(label);
+}
+const confWrap = document.createElement("label");
+confWrap.innerHTML = 'Min confidence <input id="conf" type="range" min="0" max="100" step="5" value="0"><span id="confv">0</span>';
+$("filters").append(confWrap);
+const tableBtn = document.createElement("button");
+tableBtn.textContent = "Table view";
+tableBtn.onclick = () => { const t = $("table"); t.style.display = t.style.display === "block" ? "none" : "block"; };
+$("filters").append(tableBtn);
+const sp = document.createElement("span"); sp.className = "sp"; $("filters").append(sp);
+const png = document.createElement("button"); png.textContent = "PNG"; $("filters").append(png);
+const svgb = document.createElement("button"); svgb.textContent = "SVG"; $("filters").append(svgb);
+
+$("conf").oninput = e => { $("confv").textContent = e.target.value; draw(); };
+
+// ---------------------------------------------------------------- drawing
+const svg = document.createElementNS(NS, "svg");
+svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+svg.setAttribute("role", "img");
+svg.setAttribute("aria-label", D.title);
+
+function el(tag, attrs, parent = svg, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  parent.appendChild(e); return e;
+}
+
+function visible() {
+  const min = +$("conf").value;
+  return D.events.filter(e => active.has(e.lane) && e.confidence >= min);
+}
+
+function niceDate(iso) { const d = new Date(iso); return d.toISOString().slice(0, 10); }
+
+function draw() {
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const evs = visible();
+  const lanes = D.lanes.filter(l => evs.some(e => e.lane === l.key));
+  const t0 = Date.parse(D.range[0]), t1 = Date.parse(D.range[1]);
+  const span = Math.max(1, t1 - t0), pad = span * 0.03;
+  const x = t => ML + (Date.parse(t) - t0 + pad) / (span + pad * 2) * (W - ML - MR);
+  const laneH = lanes.length ? Math.max(46, (H - MT - MB) / lanes.length) : 46;
+
+  el("rect", { x: 0, y: 0, width: W, height: H, fill: "var(--panel)" });
+  el("text", { x: 40, y: 44, fill: "var(--ink)", "font-size": 26, "font-weight": 800, "font-family": "system-ui, sans-serif" }, svg, D.title);
+  if (D.subtitle) el("text", { x: 40, y: 70, fill: "var(--dim)", "font-size": 13, "font-family": "system-ui, sans-serif" }, svg, D.subtitle);
+  el("text", { x: 40, y: 92, fill: "var(--dim)", "font-size": 11.5, "font-family": "ui-monospace, monospace" }, svg,
+     `${evs.length} objects, ${lanes.length} lanes` + (D.source ? ` - source: ${D.source}` : " - source not stated"));
+
+  // month grid and labels
+  const start = new Date(t0), end = new Date(t1);
+  let cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+  while (cur <= end) {
+    const px = x(cur.toISOString());
+    el("line", { x1: px, y1: MT - 8, x2: px, y2: H - MB + 6, stroke: "var(--line)", "stroke-width": 1 });
+    el("text", { x: px + 4, y: H - MB + 24, fill: "var(--dim)", "font-size": 11, "font-family": "ui-monospace, monospace" }, svg,
+       cur.toLocaleString("en", { month: "short", year: "numeric", timeZone: "UTC" }));
+    cur = new Date(Date.UTC(cur.getUTCFullYear(), cur.getUTCMonth() + 1, 1));
+  }
+
+  lanes.forEach((lane, i) => {
+    const cy = MT + laneH * i + laneH / 2;
+    el("line", { x1: ML - 10, y1: cy, x2: W - MR, y2: cy, stroke: "var(--line)", "stroke-width": 1, "stroke-dasharray": "3 5" });
+    el("rect", { x: 30, y: cy - 7, width: 8, height: 14, fill: COL[lane.key], rx: 2 });
+    el("text", { x: 46, y: cy + 4, fill: "var(--ink)", "font-size": 13, "font-weight": 700, "font-family": "system-ui, sans-serif" }, svg, lane.label);
+    el("text", { x: 46, y: cy + 19, fill: "var(--dim)", "font-size": 10, "font-family": "ui-monospace, monospace" }, svg,
+       `${evs.filter(e => e.lane === lane.key).length}`);
+
+    let li = 0;
+    for (const e of evs.filter(e => e.lane === lane.key)) {
+      li += 1;
+      const x0 = x(e.start), x1 = e.end ? Math.max(x0 + 5, x(e.end)) : x0;
+      const g = el("g", { tabindex: 0, role: "button", "aria-label": `${e.name}, ${e.type}, ${niceDate(e.start)}` });
+      const fill = COL[e.lane];
+      if (e.end) {
+        el("rect", { x: x0, y: cy - 9, width: x1 - x0, height: 18, rx: 5, fill, opacity: e.confidence ? Math.max(.35, e.confidence / 100) : .5 }, g);
+        el("rect", { x: x0, y: cy - 9, width: x1 - x0, height: 18, rx: 5, fill: "none", stroke: fill, "stroke-width": 1.2 }, g);
+      } else {
+        el("circle", { cx: x0, cy, r: 6.5, fill, opacity: e.confidence ? Math.max(.35, e.confidence / 100) : .6 }, g);
+        el("circle", { cx: x0, cy, r: 6.5, fill: "none", stroke: fill, "stroke-width": 1.2 }, g);
+      }
+      const nearRight = x0 > W - MR - 230;
+      const labelX = nearRight ? x0 - 10 : (e.end ? x0 + 8 : x0 + 10);
+      const labelY = cy + (li % 2 ? 20 : -12);
+      el("text", { x: labelX, y: labelY, fill: "var(--ink)", "font-size": 10.5, "text-anchor": nearRight ? "end" : "start",
+                   "font-family": "system-ui, sans-serif" }, g,
+         e.name.length > 46 ? e.name.slice(0, 45) + "..." : e.name);
+      const t = el("title", {}, g, `${e.name}\n${e.type} - ${niceDate(e.start)}${e.end ? " to " + niceDate(e.end) : ""}\nconfidence ${e.confidence || "not stated"}`);
+      g.onclick = () => select(e);
+      g.onkeydown = ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(e); } };
+    }
+  });
+
+  el("text", { x: ML, y: H - 16, fill: "var(--dim)", "font-size": 10, "font-family": "ui-monospace, monospace" }, svg,
+     "STIX 2.1 objects placed by first_seen / valid_from / published / created. Bars run to last_seen or valid_until.");
+  // axis line
+  el("line", { x1: ML, y1: H - MB + 2, x2: W - MR, y2: H - MB + 2, stroke: "var(--line)" });
+  $("chart").replaceChildren(svg);
+  buildTable(evs);
+}
+
+function select(e) {
+  selected = e.id;
+  const side = $("side");
+  side.replaceChildren();
+  const h = document.createElement("h2"); h.textContent = e.name; side.append(h);
+  const m = document.createElement("div"); m.className = "meta";
+  m.textContent = `${e.type} - ${niceDate(e.start)}${e.end ? " to " + niceDate(e.end) : ""} - confidence ${e.confidence || "not stated"}`;
+  side.append(m);
+  if (e.description) { const p = document.createElement("div"); p.className = "desc"; p.textContent = e.description; side.append(p); }
+  for (const t of e.techniques || []) { const s = document.createElement("span"); s.className = "tag"; s.textContent = t; side.append(s); }
+  for (const l of e.labels || []) { const s = document.createElement("span"); s.className = "tag"; s.textContent = l; side.append(s); }
+  if (e.sources && e.sources.length) {
+    const p = document.createElement("div"); p.className = "meta"; p.textContent = "Sources"; side.append(p);
+    for (const s of e.sources) {
+      const d = document.createElement("div");
+      if (s.url) { const a = document.createElement("a"); a.href = s.url; a.rel = "noopener"; a.target = "_blank"; a.textContent = s.label; d.append(a); }
+      else d.textContent = s.label;
+      side.append(d);
+    }
+  }
+  const rel = D.links.filter(l => l.from === e.name || l.to === e.name);
+  if (rel.length) {
+    const p = document.createElement("div"); p.className = "meta"; p.textContent = "Relationships"; side.append(p);
+    for (const r of rel.slice(0, 20)) {
+      const d = document.createElement("div"); d.className = "tag";
+      d.textContent = `${r.from} ${r.kind} ${r.to}`; side.append(d);
+    }
+  }
+  const hint = document.createElement("div"); hint.className = "hint";
+  hint.textContent = "The timeline shows recorded dates, not proof of attribution or of when an event began.";
+  side.append(hint);
+}
+
+function buildTable(evs) {
+  const t = document.createElement("table");
+  const head = document.createElement("tr");
+  for (const h of ["Start", "End", "Lane", "Type", "Name", "Confidence"]) { const th = document.createElement("th"); th.textContent = h; head.append(th); }
+  t.append(head);
+  for (const e of evs) {
+    const tr = document.createElement("tr");
+    for (const v of [niceDate(e.start), e.end ? niceDate(e.end) : "", e.lane, e.type, e.name, e.confidence || ""]) {
+      const td = document.createElement("td"); td.textContent = v; tr.append(td);
+    }
+    t.append(tr);
+  }
+  $("table").replaceChildren(t);
+}
+
+// ---------------------------------------------------------------- export
+function slug() { return (D.title || "timeline").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48); }
+function save(blob, ext) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${slug()}.${ext}`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function svgString() {
+  const clone = svg.cloneNode(true);
+  clone.setAttribute("xmlns", NS);
+  clone.setAttribute("width", W); clone.setAttribute("height", H);
+  return new XMLSerializer().serializeToString(clone);
+}
+svgb.onclick = () => save(new Blob([svgString()], { type: "image/svg+xml" }), "svg");
+png.onclick = () => {
+  const img = new Image();
+  const url = URL.createObjectURL(new Blob([svgString()], { type: "image/svg+xml" }));
+  img.onload = () => {
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d");
+    const bg = getComputedStyle(document.documentElement).getPropertyValue("--panel").trim() || "#121820";
+    g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    g.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    c.toBlob(b => save(b, "png"));
+  };
+  img.src = url;
+};
+
+if (D.events.length) select(D.events[0]);
+draw();
+</script>
+</body></html>
