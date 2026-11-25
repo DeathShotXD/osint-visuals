@@ -6,7 +6,9 @@ diagram that tests a claimed time, a 3D miniature of the scene with the camera's
 locator map.
 
 Four skills in the open [Agent Skills](https://agentskills.io) format, for Claude Code and other agents. Each one
-writes **a single HTML file** with PNG and video export built in. Python 3.9+, nothing to install, no API keys.
+writes **a single HTML file** with export built in: PNG for all four, WebM video for track-map and scene-diorama, SVG
+for shadow-diagram and locator-map. Python 3.9+, standard library only (on Windows, `--tz` zone names need
+`pip install tzdata`; offsets like +03:00 work everywhere), no API keys.
 
 | | |
 |---|---|
@@ -34,6 +36,7 @@ from overclaiming: a gap is "no reports for 31 hours", not "switched off its tra
 
 ```
 git clone https://github.com/Ghongha007/osint-visuals.git
+mkdir -p ~/.claude/skills
 cp -r osint-visuals/skills/* ~/.claude/skills/
 ```
 
@@ -61,19 +64,23 @@ python3 skills/locator-map/scripts/locator.py --place "Beira, Mozambique" --titl
 ```
 
 Each prints what it found (gaps, windows, matches) and writes the page. Open it in a browser, pick a frame (16:9, 1:1,
-4:5, 9:16 Reel, print) and export. The pages load their drawing libraries (MapLibre, three.js, d3) and map tiles from
-public CDNs, so they need a connection when opened.
+4:5 or 9:16 Reel; locator-map also has 3:2 web and print) and export. The track, diorama and locator pages load pinned
+libraries (MapLibre, three.js, d3) from unpkg, and the track map loads its tiles from OpenFreeMap, so they need a
+connection when opened. The shadow page is fully self-contained.
 
 ## Data, and the rules that come with it
 
 | Used by | Source | Licence and rules |
 |---|---|---|
-| track-map | your CSV; basemap from [OpenFreeMap](https://openfreemap.org) | Map © OpenStreetMap contributors, OpenMapTiles. Your data's own terms apply. |
-| scene-diorama | [Overpass API](https://overpass-api.de) (OpenStreetMap) | ODbL: credit "© OpenStreetMap contributors". One request per place, cached; Overpass is shared, so no bulk loops. |
+| track-map | your CSV; basemap from [OpenFreeMap](https://openfreemap.org) | Map: OpenFreeMap © OpenMapTiles, data © OpenStreetMap contributors (credit is drawn on every export). Your data's own terms apply. |
+| scene-diorama | [Overpass API](https://overpass-api.de) (OpenStreetMap) | ODbL: credit "© OpenStreetMap contributors". One request per place (up to two retries if the server is busy), cached; Overpass is shared, so no bulk loops. |
 | locator-map | [Natural Earth](https://www.naturalearthdata.com), [Nominatim](https://nominatim.org) | Natural Earth is public domain. Nominatim: max 1 request per second, identifying User-Agent, results cached ([policy](https://operations.osmfoundation.org/policies/nominatim/)). |
 | shadow-diagram | none | Sun positions computed locally (NOAA equations). |
 
-Downloads are cached in `~/.cache/osint-visuals`. The scripts send an identifying User-Agent and nothing about you.
+The scripts' downloads are cached in `~/.cache/osint-visuals` and never expire; delete a file there to fetch fresh
+OpenStreetMap data. The scripts send an identifying User-Agent and only what each lookup needs (the place name, or the
+area's coordinates) to OpenStreetMap's servers. Opening a page fetches libraries and tiles from third-party servers,
+which see your IP address and the area you are viewing: keep that in mind for sensitive investigations.
 
 ## What these skills will not do
 
@@ -97,8 +104,9 @@ These limits are written into the skills. If you fork the pack, please keep them
 python3 -m unittest discover -s tests
 ```
 
-The tests run offline: track analysis on the demo data, sun positions against known values, the shadow windows and
-claim check, and the geometry helpers.
+The tests run offline: track analysis on the regenerated demo data, the sun position against a known value (London's
+noon sun at the December solstice), the shadow windows and claim check, page writing for track and shadow, and the
+diorama and locator geometry helpers.
 
 ## Related
 
