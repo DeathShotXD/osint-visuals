@@ -127,6 +127,7 @@ passes, and the scroll-story parser, its text escaping and its Svelte export.
 - [osint-skills](https://github.com/Ghongha007/osint-skills): verification skills (geolocate, chronolocate, archive evidence, attribute claims)
 - [groundline](https://github.com/Ghongha007/groundline): check every sentence of a draft against its source documents
 - [verify-mcp](https://github.com/Ghongha007/verify-mcp): an MCP server with keyless, read-only verification lookups
+- [aitrace](https://github.com/Ghongha007/aitrace): check an image or video for traces of AI generation
 
 ## Licence
 
