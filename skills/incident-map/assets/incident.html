@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__ · incident map</title>
+<!-- Written by osint-visuals incident-map (incident.py). One self-contained page: the aggregate rows and the country
+     outlines are embedded below. No network, no library, no key. Aggregate only: no organisation or victim is named. -->
+<style>
+  :root { --bg:#0b0f13; --panel:#121820; --ink:#eef2f0; --dim:#9aa7b0; --line:#23303a; --accent:#4fd1c5;
+          --warm:#f2a65a; --sea:#0e1a22; --land:#26343f; }
+  [data-theme="light"] { --bg:#f6f3ec; --panel:#fffdf8; --ink:#1e2529; --dim:#63707a; --line:#ddd5c6;
+          --sea:#e4ecee; --land:#dcd6c6; --accent:#0f766e; --warm:#b9770e; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding:22px 22px 40px; }
+  header { max-width:1600px; margin:0 auto 12px; }
+  .kicker { font:800 11px/1 ui-monospace, monospace; letter-spacing:.18em; color:var(--dim); text-transform:uppercase; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .bar { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin:12px auto; max-width:1600px;
+         padding:10px 12px; background:var(--panel); border:1px solid var(--line); border-radius:10px; }
+  .bar .hint { color:var(--dim); font-size:12px; }
+  .bar button { font:600 12px system-ui, sans-serif; color:var(--ink); background:var(--bg);
+         border:1px solid var(--line); border-radius:7px; padding:7px 10px; cursor:pointer; }
+  .bar button:hover { border-color:var(--accent); }
+  .bar .sp { flex:1; }
+  main { max-width:1600px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:14px; }
+  #chart { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:6px; overflow:auto; }
+  #chart svg { display:block; width:100%; height:auto; }
+  #side { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  #side h2 { font-size:14px; margin:0 0 8px; }
+  #side table { width:100%; border-collapse:collapse; font-size:12px; }
+  #side td { padding:4px 6px; border-bottom:1px solid var(--line); }
+  #side td:last-child { text-align:right; font-variant-numeric:tabular-nums; }
+  #side .hint { color:var(--dim); font-size:11.5px; margin-top:10px; }
+  #table { display:none; max-width:1600px; margin:12px auto 0; background:var(--panel); border:1px solid var(--line);
+           border-radius:10px; padding:12px; }
+  #table h3 { margin:0 0 8px; font-size:13px; }
+  table.big { width:100%; border-collapse:collapse; font-size:12px; margin-bottom:14px; }
+  table.big th, table.big td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }
+  table.big th { color:var(--dim); }
+  footer { max-width:1600px; margin:12px auto 0; color:var(--dim); font-size:11px; }
+  @media (max-width:900px) { main { grid-template-columns:1fr; } }
+</style></head>
+<body>
+<header>
+  <div class="kicker">Incident map / aggregate view</div>
+  <h1 class="sr-only">__TITLE__</h1>
+</header>
+
+<div class="bar" id="filters"></div>
+
+<main>
+  <div id="chart"></div>
+  <aside id="side"></aside>
+</main>
+
+<div id="table"></div>
+<footer id="foot"></footer>
+
+<script>
+const D = /*__DATA__*/null;
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const W = 1600, H = 1000, PAD = 40, TOP = 118, MAPH = 470, LOW = TOP + MAPH + 40;
+document.documentElement.dataset.theme = D.theme || "dark";
+const active = new Set(D.sectors.map(s => s.name));
+let hover = null;
+
+const svg = document.createElementNS(NS, "svg");
+svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+svg.setAttribute("role", "img");
+svg.setAttribute("aria-label", D.title);
+function el(tag, attrs, parent = svg, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  parent.appendChild(e); return e;
+}
+function num(n) { return Number(n).toLocaleString("en"); }
+function hex(h) { return [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16)); }
+function mix(a, b, t) {
+  const A = hex(a), B = hex(b);
+  return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("");
+}
+function shade(t) { return mix("#1d4a4a", "#f2a65a", Math.max(0, Math.min(1, t))); }
+
+function current() {
+  const evs = D.events.filter(e => active.has(e.s));
+  const byC = {}, byS = {}, byM = {};
+  let total = 0;
+  for (const e of evs) {
+    total += e.n;
+    byC[e.c] = (byC[e.c] || 0) + e.n;
+    byS[e.s] = (byS[e.s] || 0) + e.n;
+    byM[e.m] = (byM[e.m] || 0) + e.n;
+  }
+  return { evs, byC, byS, byM, total };
+}
+
+// ------------------------------------------------------------------ filters
+(function filters() {
+  $("filters").append(Object.assign(document.createElement("span"), {
+    className: "hint", textContent: `${D.countries.length} countries, ${D.sectors.length} sectors` +
+      (D.range ? `, ${D.range[0]} to ${D.range[1]}` : "") }));
+  const all = document.createElement("button"); all.textContent = "All sectors";
+  const none = document.createElement("button"); none.textContent = "No sectors";
+  all.onclick = () => { D.sectors.forEach(s => active.add(s.name)); render(); };
+  none.onclick = () => { active.clear(); render(); };
+  $("filters").append(all, none);
+  const sp = document.createElement("span"); sp.className = "sp"; $("filters").append(sp);
+  const tb = document.createElement("button"); tb.textContent = "Table view";
+  tb.onclick = () => { const t = $("table"); t.style.display = t.style.display === "block" ? "none" : "block"; };
+  const png = document.createElement("button"); png.textContent = "PNG";
+  const sv = document.createElement("button"); sv.textContent = "SVG";
+  $("filters").append(tb, png, sv);
+  png.onclick = () => {
+    const img = new Image();
+    const url = URL.createObjectURL(new Blob([svgString()], { type: "image/svg+xml" }));
+    img.onload = () => {
+      const c = document.createElement("canvas"); c.width = W; c.height = H;
+      const g = c.getContext("2d");
+      const bg = getComputedStyle(document.documentElement).getPropertyValue("--panel").trim() || "#121820";
+      g.fillStyle = bg; g.fillRect(0, 0, W, H); g.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url); c.toBlob(b => save(b, "png"));
+    };
+    img.src = url;
+  };
+  sv.onclick = () => save(new Blob([svgString()], { type: "image/svg+xml" }), "svg");
+})();
+
+function slug() { return (D.title || "incidents").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48); }
+function save(blob, ext) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${slug()}.${ext}`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function svgString() {
+  const c = svg.cloneNode(true);
+  c.setAttribute("xmlns", NS); c.setAttribute("width", W); c.setAttribute("height", H);
+  return new XMLSerializer().serializeToString(c);
+}
+
+// ------------------------------------------------------------------ render
+function render() {
+  const S = current();
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  el("rect", { x: 0, y: 0, width: W, height: H, fill: "var(--panel)" });
+  el("text", { x: PAD, y: 44, fill: "var(--ink)", "font-size": 26, "font-weight": 800, "font-family": "system-ui, sans-serif" }, svg, D.title);
+  if (D.subtitle) el("text", { x: PAD, y: 68, fill: "var(--dim)", "font-size": 13 }, svg, D.subtitle);
+  el("text", { x: PAD, y: 90, fill: "var(--dim)", "font-size": 11.5, "font-family": "ui-monospace, monospace" }, svg,
+     `${num(S.total)} incidents` + (D.source ? ` - source: ${D.source}` : " - source not stated") +
+     ` - aggregate, no organisations named`);
+
+  // map
+  const view = D.view || [-180, -60, 180, 75];
+  const x = lon => PAD + (lon - view[0]) / (view[2] - view[0]) * (W - 2 * PAD);
+  const y = lat => TOP + (view[3] - lat) / (view[3] - view[1]) * MAPH;
+  el("rect", { x: PAD, y: TOP, width: W - 2 * PAD, height: MAPH, fill: "var(--sea)", stroke: "var(--line)" });
+  const defs = el("defs", {});
+  const clip = el("clipPath", { id: "mapclip" }, defs);
+  el("rect", { x: PAD, y: TOP, width: W - 2 * PAD, height: MAPH }, clip);
+  const g = el("g", { "clip-path": "url(#mapclip)" });
+  const max = Math.max(1, ...Object.values(S.byC));
+  (D.basemap || []).forEach(c => {
+    const v = S.byC[c.name] || 0;
+    const t = v ? 0.18 + 0.82 * Math.sqrt(v / max) : 0;
+    c.polys.forEach(ring => {
+      if (ring.length < 3) return;
+      const node = el("polygon", { points: ring.map(p => `${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(" "),
+        fill: v ? shade(t) : "var(--land)", stroke: "var(--line)", "stroke-width": v ? 1 : .5 }, g);
+      if (v) el("title", {}, node, `${c.name}: ${num(v)} incidents`);
+    });
+  });
+  // legend
+  const lx = W - PAD - 210, ly = TOP + MAPH - 26;
+  el("text", { x: lx, y: ly - 16, fill: "var(--dim)", "font-size": 10, "font-family": "ui-monospace, monospace" }, svg, "incidents");
+  for (let i = 0; i < 20; i++) el("rect", { x: lx + i * 9, y: ly - 12, width: 9, height: 10, fill: shade(i / 19) });
+  el("text", { x: lx, y: ly + 12, fill: "var(--dim)", "font-size": 10, "font-family": "ui-monospace, monospace" }, svg, "0");
+  el("text", { x: lx + 180, y: ly + 12, fill: "var(--dim)", "font-size": 10, "text-anchor": "end", "font-family": "ui-monospace, monospace" }, svg, num(max));
+
+  // sectors
+  const secs = Object.entries(S.byS).sort((a, b) => b[1] - a[1]).slice(0, 9);
+  const maxS = Math.max(1, ...secs.map(s => s[1]));
+  el("text", { x: PAD, y: LOW, fill: "var(--ink)", "font-size": 13, "font-weight": 700 }, svg, "Incidents by sector");
+  secs.forEach(([name, v], i) => {
+    const yy = LOW + 14 + i * 26;
+    const on = active.has(name);
+    const node = el("g", { tabindex: 0, role: "button", "aria-pressed": on });
+    el("rect", { x: PAD, y: yy, width: 330, height: 18, rx: 4, fill: on ? "var(--accent)" : "var(--line)", opacity: on ? .85 : .5 }, node);
+    el("rect", { x: PAD, y: yy, width: 12 + (330 - 12) * (v / maxS), height: 18, rx: 4, fill: "var(--accent)", opacity: on ? 1 : .35 }, node);
+    el("text", { x: PAD + 340, y: yy + 14, fill: "var(--ink)", "font-size": 11.5 }, node,
+       `${name.length > 34 ? name.slice(0, 33) + "..." : name}  (${num(v)})`);
+    node.onclick = () => { on ? active.delete(name) : active.add(name); render(); };
+    node.onkeydown = ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); node.onclick(); } };
+  });
+
+  // months
+  const mx0 = PAD + 640;
+  el("text", { x: mx0, y: LOW, fill: "var(--ink)", "font-size": 13, "font-weight": 700 }, svg, "Incidents by month");
+  const months = D.monthly.map(m => ({ month: m.month, count: S.byM[m.month] || 0 }));
+  const maxM = Math.max(1, ...months.map(m => m.count));
+  const bw = (W - PAD - mx0) / Math.max(1, months.length);
+  months.forEach((m, i) => {
+    const h = m.count / maxM * 200;
+    const node = el("rect", { x: mx0 + i * bw + bw * .12, y: LOW + 230 - h, width: Math.max(1, bw * .76), height: h, fill: "var(--warm)", opacity: .8 });
+    el("title", {}, node, `${m.month}: ${m.count}`);
+    if (i % Math.ceil(months.length / 12) === 0)
+      el("text", { x: mx0 + i * bw + bw / 2, y: LOW + 246, fill: "var(--dim)", "font-size": 9.5, "text-anchor": "middle",
+                   "font-family": "ui-monospace, monospace" }, svg, m.month.slice(2));
+  });
+  el("line", { x1: mx0, y1: LOW + 230, x2: W - PAD, y2: LOW + 230, stroke: "var(--line)" });
+
+  // side summary
+  const side = $("side"); side.replaceChildren();
+  const h2 = document.createElement("h2"); h2.textContent = "Top countries"; side.append(h2);
+  const t = document.createElement("table");
+  Object.entries(S.byC).sort((a, b) => b[1] - a[1]).slice(0, 12).forEach(([name, v]) => {
+    const tr = document.createElement("tr");
+    const a = document.createElement("td"); a.textContent = name;
+    const b = document.createElement("td"); b.textContent = num(v);
+    tr.append(a, b); t.append(tr);
+  });
+  side.append(t);
+  const hint = document.createElement("div"); hint.className = "hint";
+  hint.textContent = "Aggregated reports only. This graphic names no organisation or victim, and a count is not a " +
+    "severity: datasets differ in what they count and when they collect. " +
+    (D.unmapped && D.unmapped.length ? ` ${D.unmapped.length} country spelling(s) had no outline and are shown in the tables only.` : "");
+  side.append(hint);
+
+  $("chart").replaceChildren(svg);
+  buildTable(S);
+}
+
+function buildTable(S) {
+  const box = $("table"); box.replaceChildren();
+  const mk = (title, head, rows) => {
+    const h = document.createElement("h3"); h.textContent = title; box.append(h);
+    const t = document.createElement("table"); t.className = "big";
+    const hr = document.createElement("tr");
+    head.forEach(x => { const th = document.createElement("th"); th.textContent = x; hr.append(th); });
+    t.append(hr);
+    rows.forEach(r => { const tr = document.createElement("tr");
+      r.forEach(v => { const td = document.createElement("td"); td.textContent = v; tr.append(td); }); t.append(tr); });
+    box.append(t);
+  };
+  mk("Countries", ["Country", "Incidents", "Rows"],
+     Object.entries(S.byC).sort((a, b) => b[1] - a[1]).map(([n, v]) =>
+       [n, v, D.events.filter(e => e.c === n && active.has(e.s)).length]));
+  mk("Sectors", ["Sector", "Incidents"],
+     Object.entries(S.byS).sort((a, b) => b[1] - a[1]).map(([n, v]) => [n, v]));
+  mk("Months", ["Month", "Incidents"], D.monthly.map(m => [m.month, S.byM[m.month] || 0]));
+}
+
+$("foot").textContent = `${D.source ? "Source: " + D.source + ". " : "Source not stated. "}` +
+  `Generated ${D.generated} from ${D.input}. Country outlines: Natural Earth (public domain). Aggregate of reported ` +
+  `incidents; no organisation or victim is named. Made with osint-visuals.`;
+render();
+</script>
+</body></html>

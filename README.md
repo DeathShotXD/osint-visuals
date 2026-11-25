@@ -5,9 +5,9 @@ publication-ready visual that carries its own sources: an animated ship track th
 diagram that tests a claimed time, a 3D miniature of the scene with the camera's line of sight, a newsroom locator
 map, a before-and-after satellite slider, or a whole scrolling map story.
 
-Six skills in the open [Agent Skills](https://agentskills.io) format, for Claude Code and other agents. Each one
-writes **a single HTML file**. The five graphics have export built in: PNG for all five, WebM video for track-map,
-scene-diorama and before-after, SVG for shadow-diagram and locator-map. The scroll story can also be written as a
+Seven skills in the open [Agent Skills](https://agentskills.io) format, for Claude Code and other agents. Each one
+writes **a single HTML file**. The six graphics have export built in: PNG for all six, WebM video for track-map,
+scene-diorama and before-after, SVG for shadow-diagram, locator-map and incident-map. The scroll story can also be written as a
 Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only (on Windows, `--tz` zone names need
 `pip install tzdata`; offsets like +03:00 work everywhere), no API keys.
 
@@ -19,6 +19,10 @@ Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only 
 | **shadow-diagram**: when could this shadow have been cast? The windows that fit, and a claimed time tested against them. | **locator-map**: a clean "where is this" map from a place name, in web, social and print sizes. |
 | ![A before-and-after slider of Lahaina, Maui, on 29 July and 18 August 2023](docs/gallery/before-after.png) | ![A scroll story: a map step with a marker on a desktop screen, and a satellite picture step on a phone](docs/gallery/scroll-story.png) |
 | **before-after**: a slider readers can drag, from free NASA imagery (the clearest pass near each date is picked for you) or your own licensed images. | **scroll-story**: a plain-text script becomes a scrolling story: the map flies between places, pictures change, the before/after divider moves with the scroll. Also as a Svelte project. |
+
+**incident-map**: an incident table becomes a country choropleth, a sector breakdown and a monthly chart, aggregate
+only, with sources on the graphic. [Open the demo](examples/incidents/demo-incidents-incidents.html) built from
+[an invented table](examples/incidents/demo-incidents.csv).
 
 ![The approximate view from the camera position in the diorama](docs/gallery/scene-diorama-camera-view.png)
 
@@ -101,6 +105,7 @@ python3 skills/locator-map/scripts/locator.py --place "Beira, Mozambique" --titl
 python3 skills/before-after/scripts/before_after.py --lat 20.873 --lon -156.677 --km 1.8 \
     --before 2023-08-05 --after 2023-08-10 --title "Lahaina before and after the fire"
 python3 skills/scroll-story/scripts/story.py examples/scroll-story/demo.md --svelte story-app/
+python3 skills/incident-map/scripts/incident.py examples/incidents/demo-incidents.csv --title "Incidents by country"
 ```
 
 Each prints what it found (gaps, windows, matches) and writes the page. Open it in a browser, pick a frame (16:9, 1:1,
@@ -119,6 +124,7 @@ OpenFreeMap, so they need a connection when opened. The shadow and before-after 
 | shadow-diagram | none | Sun positions computed locally (NOAA equations). |
 | before-after | your images, or [NASA GIBS](https://www.earthdata.nasa.gov/gibs) (HLS, VIIRS, MODIS) | Keyless; the graphic credits NASA GIBS and, for HLS Sentinel-2, "contains modified Copernicus Sentinel data". The date search fetches up to one small preview per day, from the asked-for date out to 12 days before or after (`--window`), stopping early at a clear pass; cached. Your own images: their owner's terms. |
 | scroll-story | your script and images; map steps from OpenFreeMap | Map credit in the page's sources footer; every image needs its own credit. |
+| incident-map | your incident table; outlines from [Natural Earth](https://www.naturalearthdata.com) | Natural Earth is public domain. The graphic names no organisation or victim; your dataset's terms apply. |
 
 The scripts' downloads are cached in `~/.cache/osint-visuals` and never expire; delete a file there to fetch fresh
 OpenStreetMap data. The scripts send an identifying User-Agent and only what each lookup needs (the place name, or the
@@ -142,6 +148,8 @@ These limits are written into the skills. If you fork the pack, please keep them
 - Locator borders follow Natural Earth's de facto lines. For disputed areas, follow your outlet's style guide.
 - Free NASA HLS imagery is 30 m a pixel: single buildings are not visible, and some places (remote islands, some ocean
   areas) have no data on many dates. For detail, use licensed commercial imagery with `--before-image`/`--after-image`.
+- The incident map counts what your table counts. A country with no shading may have no reporting rather than no
+  incidents, and two datasets that both say "incidents" may not mean the same thing.
 
 ## Tests
 
@@ -152,7 +160,8 @@ python3 -m unittest discover -s tests
 The tests run offline: track analysis on the regenerated demo data, the sun position against a known value (London's
 noon sun at the December solstice), the shadow windows and claim check, page writing for track, shadow and
 before-after, the diorama and locator geometry helpers, the PNG reader and cloud score used to pick clear satellite
-passes, and the scroll-story parser, its text escaping and its Svelte export.
+passes, the scroll-story parser, its text escaping and its Svelte export, and the incident table parser, country
+matching, aggregation and escaping.
 
 ## Related
 
