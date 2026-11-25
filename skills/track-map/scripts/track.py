@@ -19,6 +19,7 @@ import html
 import json
 import math
 import os
+import re
 import sys
 from datetime import datetime, timezone, timedelta
 
@@ -54,6 +55,17 @@ def parse_time(s):
         pass
     t = datetime.fromisoformat(s.replace("Z", "+00:00").replace(" UTC", ""))
     return t if t.tzinfo else t.replace(tzinfo=timezone.utc)
+
+
+def check_tz(s):
+    """Return a +HH:MM offset. A zone name would shift mid-track and the page has one clock."""
+    v = s.strip()
+    if v.upper() in ("Z", "UTC", "GMT"):
+        return "+00:00"
+    m = re.fullmatch(r"([+-])(\d{1,2}):(\d{2})", v)
+    if m and int(m.group(2)) <= 23 and int(m.group(3)) <= 59:
+        return f"{m.group(1)}{int(m.group(2)):02d}:{m.group(3)}"
+    sys.exit(f"--tz must be a fixed offset like +04:00 or -05:30, not {s!r}: a track can cross a zone change")
 
 
 def parse_span(s):
@@ -197,10 +209,13 @@ def main(argv=None):
     ap.add_argument("--theme", choices=["dark", "light"], default="dark")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
+    a.tz = check_tz(a.tz)
     gap_s = parse_span(a.gap or ("2h" if a.kind == "ship" else "5m"))
     max_kn = a.max_speed or (50 if a.kind == "ship" else 700)
     tracks, skipped, cid = read_tracks(a.csv)
     out, gaps, jumps, meets = analyse(tracks, gap_s, max_kn, a.meet_km, a.meet_min * 60)
+    if not out:
+        sys.exit(f"{a.csv}: no usable positions. Check the time, latitude and longitude values (0,0 and out-of-range fixes are skipped).")
     lats = [p[1] for t in out for p in t["pts"]] + [j["b"][0] for j in jumps]   # flagged positions stay in frame
     lons = [p[2] for t in out for p in t["pts"]] + [j["b"][1] for j in jumps]
     data = {"title": a.title, "subtitle": a.subtitle, "source": a.source, "kind": a.kind, "tz": a.tz, "theme": a.theme,

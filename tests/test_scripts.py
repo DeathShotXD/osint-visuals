@@ -163,5 +163,25 @@ class ScrollStory(unittest.TestCase):
             self.assertTrue(os.path.exists(os.path.join(app, "src", "lib", "Scrolly.svelte")))
 
 
+class Input(unittest.TestCase):
+    def test_tz_is_normalised(self):
+        self.assertEqual(track.check_tz("UTC"), "+00:00")
+        self.assertEqual(track.check_tz("+4:00"), "+04:00")
+
+    def test_tz_must_be_a_fixed_offset(self):
+        with tempfile.TemporaryDirectory() as d:
+            csvp = os.path.join(d, "ok.csv")
+            open(csvp, "w").write("vessel,timestamp,lat,lon\nX,2026-06-09T06:00:00Z,24.0,58.0\nX,2026-06-09T08:00:00Z,24.1,58.1\n")
+            with self.assertRaises(SystemExit):
+                track.main([csvp, "--tz", "Asia/Dubai", "--out", os.path.join(d, "ok.html")])
+
+    def test_no_usable_positions_is_an_error(self):
+        with tempfile.TemporaryDirectory() as d:
+            csvp = os.path.join(d, "bad.csv")
+            open(csvp, "w").write("vessel,timestamp,lat,lon\nX,2026-06-09T06:00:00Z,999,58.0\n")
+            with self.assertRaises(SystemExit):
+                track.main([csvp, "--out", os.path.join(d, "bad.html")])
+
+
 if __name__ == "__main__":
     unittest.main()
