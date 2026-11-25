@@ -20,6 +20,16 @@ track = load("skills/track-map/scripts/track.py", "track")
 shadow = load("skills/shadow-diagram/scripts/shadow.py", "shadow")
 diorama = load("skills/scene-diorama/scripts/diorama.py", "diorama")
 locator = load("skills/locator-map/scripts/locator.py", "locator")
+before_after = load("skills/before-after/scripts/before_after.py", "before_after")
+story = load("skills/scroll-story/scripts/story.py", "story")
+
+
+def make_png(pixels, w, h):
+    """A small RGBA PNG from a flat list of (r, g, b, a) tuples, using the standard library only."""
+    import struct, zlib
+    raw = b"".join(b"\x00" + b"".join(bytes(px) for px in pixels[y * w:(y + 1) * w]) for y in range(h))
+    chunk = lambda k, d: struct.pack(">I", len(d)) + k + d + struct.pack(">I", zlib.crc32(k + d) & 0xffffffff)
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b"")
 
 
 def page_data(path):
@@ -107,6 +117,50 @@ class Locator(unittest.TestCase):
     def test_point_in_polygon(self):
         sq = [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]]]
         self.assertTrue(locator.contains(sq, 5, 5)); self.assertFalse(locator.contains(sq, 15, 5))
+
+
+class BeforeAfter(unittest.TestCase):
+    def test_png_and_clear_score(self):
+        land, cloud, empty = (120, 100, 70, 255), (230, 232, 235, 255), (0, 0, 0, 0)
+        self.assertEqual(before_after.clear_score(make_png([land] * 16, 4, 4)), 1.0)
+        self.assertEqual(before_after.clear_score(make_png([empty] * 16, 4, 4)), 0.0)
+        self.assertAlmostEqual(before_after.clear_score(make_png([land] * 8 + [cloud] * 4 + [empty] * 4, 4, 4)), 0.5)
+        w, h, ch, rows = before_after.png_pixels(make_png([land] * 6, 3, 2)); self.assertEqual((w, h, ch, rows[1][0]), (3, 2, 4, 120))
+
+    def test_own_images(self):
+        with tempfile.TemporaryDirectory() as d:
+            a, b, dest = os.path.join(d, "a.png"), os.path.join(d, "b.png"), os.path.join(d, "ba.html")
+            open(a, "wb").write(make_png([(10, 20, 30, 255)] * 4, 2, 2)); open(b, "wb").write(make_png([(200, 20, 30, 255)] * 4, 2, 2))
+            before_after.main(["--before-image", a, "--after-image", b, "--before-label", "1 Jan", "--after-label", "2 Feb",
+                               "--credit", "Test images", "--mark", "40%,60%,Bridge", "--out", dest])
+            data = page_data(dest)
+            self.assertEqual(data["labels"], ["1 Jan", "2 Feb"]); self.assertTrue(data["imgs"][0].startswith("data:image/png;base64,"))
+            self.assertEqual(data["marks"], [{"x": 0.4, "y": 0.6, "t": "Bridge"}])
+
+
+class ScrollStory(unittest.TestCase):
+    def test_demo_parses(self):
+        demo = os.path.join(ROOT, "examples", "scroll-story", "demo.md")
+        meta, steps, credits = story.parse(open(demo, encoding="utf-8").read(), os.path.dirname(demo))
+        self.assertEqual([s["kind"] for s in steps], ["map", "map", "map", "compare", "image", "text"])
+        self.assertEqual(steps[2]["marker"]["label"], "Lahaina"); self.assertEqual(steps[2]["pitch"], 45)
+        self.assertEqual(steps[3]["labels"], ["29 Jul 2023", "18 Aug 2023"]); self.assertIn("NASA", credits[0])
+
+    def test_text_is_escaped(self):
+        h = story.inline("A <script>x</script> **bold** and [link](https://example.org)")
+        self.assertNotIn("<script>", h); self.assertIn("<strong>bold</strong>", h); self.assertIn('href="https://example.org"', h)
+        self.assertNotIn("href", story.inline("[bad](javascript:alert(1))"))
+
+    def test_page_and_svelte_export(self):
+        demo = os.path.join(ROOT, "examples", "scroll-story", "demo.md")
+        with tempfile.TemporaryDirectory() as d:
+            dest, app = os.path.join(d, "s.html"), os.path.join(d, "app")
+            story.main([demo, "--out", dest, "--svelte", app])
+            data = page_data(dest); self.assertTrue(data["steps"][3]["before"].startswith("data:image/jpeg;base64,"))
+            js = json.load(open(os.path.join(app, "src", "story.json"), encoding="utf-8"))
+            self.assertEqual(js["steps"][3]["before"], "media/lahaina-2023-07-29.jpg")
+            self.assertTrue(os.path.exists(os.path.join(app, "public", "media", "lahaina-2023-08-18.jpg")))
+            self.assertTrue(os.path.exists(os.path.join(app, "src", "lib", "Scrolly.svelte")))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,6 @@
+:root { --bg:#0c1014; --card:rgba(14,19,24,.92); --ink:#eef2f0; --dim:#a7b3ae; --line:#26313a; --accent:#5bbf4b; --mark:#ff5a4a; --shade:rgba(8,11,14,.72); }
+[data-theme="light"] { --bg:#f7f5f0; --card:rgba(255,255,255,.95); --ink:#1d2226; --dim:#5e666b; --line:#ddd6c8; --accent:#2f7a28; --mark:#d7352a; --shade:rgba(247,245,240,.78); }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:18px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.serif { font-family:"Iowan Old Style", "Palatino Linotype", Georgia, serif; }
+.card a { color:var(--accent); }

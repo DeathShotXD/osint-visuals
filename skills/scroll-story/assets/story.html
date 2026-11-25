@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<!-- Written by osint-visuals scroll-story (story.py). One page: the story and its local images are embedded below.
+     Map steps use MapLibre with OpenFreeMap tiles (OpenStreetMap data); everything else works offline. -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  :root { --bg:#0c1014; --card:rgba(14,19,24,.92); --ink:#eef2f0; --dim:#a7b3ae; --line:#26313a; --accent:#5bbf4b; --mark:#ff5a4a; --shade:rgba(8,11,14,.72); }
+  [data-theme="light"] { --bg:#f7f5f0; --card:rgba(255,255,255,.95); --ink:#1d2226; --dim:#5e666b; --line:#ddd6c8; --accent:#2f7a28; --mark:#d7352a; --shade:rgba(247,245,240,.78); }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; } @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+  body { margin:0; background:var(--bg); color:var(--ink); font:18px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .serif { font-family:"Iowan Old Style", "Palatino Linotype", Georgia, serif; }
+  header.hero { min-height:92vh; display:grid; align-content:center; padding:10vh 7vw 6vh; max-width:980px; }
+  .kicker { font:800 14px system-ui, sans-serif; letter-spacing:.2em; color:var(--accent); text-transform:uppercase; }
+  h1 { font-size:clamp(38px, 6.2vw, 76px); line-height:1.04; margin:.25em 0 .3em; letter-spacing:-.01em; }
+  .dek { font-size:clamp(20px, 2.2vw, 26px); color:var(--dim); max-width:760px; margin:0 0 1.2em; }
+  .byline { font-weight:600; color:var(--dim); font-size:16px; } .cue { margin-top:9vh; color:var(--dim); font-size:15px; }
+  #scrolly { position:relative; }
+  .graphic { position:sticky; top:0; height:100vh; overflow:hidden; }
+  #map, .layer { position:absolute; inset:0; }
+  .layer { opacity:0; transition:opacity .6s ease; display:grid; place-items:center; background:var(--bg); z-index:3; }
+  .layer.on { opacity:1; } @media (prefers-reduced-motion: reduce) { .layer { transition:none; } }
+  .layer img { max-width:100%; max-height:100%; width:100%; height:100%; object-fit:contain; }
+  .layer.cover img { object-fit:cover; }
+  .credit { position:absolute; left:12px; bottom:10px; font-size:12px; color:#fff; background:rgba(0,0,0,.55); padding:3px 8px; border-radius:6px; max-width:60%; }
+  .cmp { position:absolute; inset:0; } .cmp img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .cmp .top { clip-path:inset(0 50% 0 0); } .cmp .bar { position:absolute; top:0; bottom:0; width:4px; margin-left:-2px; background:#fff; left:50%; box-shadow:0 0 12px rgba(0,0,0,.5); }
+  .cmp .lab { position:absolute; top:16px; font:800 15px system-ui, sans-serif; padding:6px 12px; border-radius:7px; color:#fff; }
+  .cmp .lab.b { left:16px; background:rgba(10,13,16,.85); } .cmp .lab.a { right:16px; background:var(--mark); }
+  .dim { position:absolute; inset:0; background:var(--shade); opacity:0; transition:opacity .5s; pointer-events:none; z-index:4; } .dim.on { opacity:1; }
+  .steps { position:relative; z-index:2; margin-top:-100vh; padding:0 5vw 40vh; pointer-events:none; }
+  .step { min-height:95vh; display:flex; align-items:center; }
+  .step:first-child { min-height:100vh; }
+  .card { pointer-events:auto; max-width:440px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px 26px; box-shadow:0 10px 40px rgba(0,0,0,.35);
+    backdrop-filter:blur(4px); transition:opacity .4s, transform .4s; opacity:.35; transform:translateY(10px); }
+  .step.on .card { opacity:1; transform:none; }
+  .step.text-only { justify-content:center; } .step.text-only .card { max-width:640px; font-size:21px; }
+  .card p { margin:0 0 .7em; } .card p:last-child { margin:0; } .card a { color:var(--accent); }
+  .pin { display:flex; align-items:center; gap:8px; transform:translateY(-50%); } .pin i { width:16px; height:16px; border-radius:50%; background:var(--mark); border:3px solid #fff; box-shadow:0 0 0 6px rgba(255,90,74,.25); flex:none; }
+  .pin span { font:800 14px system-ui, sans-serif; color:#fff; background:var(--mark); padding:4px 9px; border-radius:6px; white-space:nowrap; }
+  footer { max-width:780px; padding:8vh 7vw 12vh; color:var(--dim); font-size:15px; } footer h2 { color:var(--ink); font-size:20px; } footer li { margin:.3em 0; }
+  .maplibregl-ctrl-attrib { font-size:11px; }
+  @media (max-width:720px) { .steps { padding:0 16px 40vh; } .step { justify-content:center; } .card { max-width:100%; padding:18px 20px; font-size:17px; } header.hero { padding:12vh 20px 6vh; } }
+</style></head>
+<body>
+<header class="hero"><div>
+  <div class="kicker">Story</div><h1 class="serif" id="title"></h1><p class="dek serif" id="dek"></p><div class="byline" id="byline"></div>
+  <div class="cue">Scroll ↓</div></div></header>
+<section id="scrolly"><div class="graphic" id="graphic"><div id="map"></div><div class="dim" id="dim"></div></div><div class="steps" id="steps"></div></section>
+<footer id="foot"></footer>
+<script>
+const D = /*__DATA__*/null, $ = id => document.getElementById(id);
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+document.documentElement.dataset.theme = D.theme; document.title = D.title;
+$("title").textContent = D.title; $("dek").textContent = D.dek; $("byline").textContent = D.byline;
+// graphic layers: one per image or compare step, the map underneath
+const layers = D.steps.map((s, i) => {
+  if (s.kind === "image") { const l = document.createElement("div"); l.className = "layer" + (s.fit === "cover" ? " cover" : "");
+    l.innerHTML = `<img alt="">${s.credit ? `<div class="credit"></div>` : ""}`; l.querySelector("img").src = s.src; l.querySelector("img").alt = s.alt || "";
+    if (s.credit) l.querySelector(".credit").textContent = s.credit; $("graphic").insertBefore(l, $("dim")); return l; }
+  if (s.kind === "compare") { const l = document.createElement("div"); l.className = "layer";
+    l.innerHTML = `<div class="cmp"><img class="bot" alt=""><img class="top" alt=""><div class="bar"></div><div class="lab b"></div><div class="lab a"></div></div>${s.credit ? `<div class="credit"></div>` : ""}`;
+    l.querySelector(".bot").src = s.after; l.querySelector(".top").src = s.before; l.querySelector(".lab.b").textContent = "Before · " + s.labels[0]; l.querySelector(".lab.a").textContent = "After · " + s.labels[1];
+    l.querySelector(".bot").alt = `After: ${s.labels[1]}`; l.querySelector(".top").alt = `Before: ${s.labels[0]}`;
+    if (s.credit) l.querySelector(".credit").textContent = s.credit; $("graphic").insertBefore(l, $("dim")); return l; }
+  return null; });
+// steps
+D.steps.forEach((s, i) => { const el = document.createElement("div"); el.className = "step" + (s.kind === "text" ? " text-only" : ""); el.dataset.i = i;
+  el.innerHTML = `<div class="card">${s.html}</div>`; $("steps").appendChild(el); });
+// the map
+let map = null, markers = [];
+if (D.map) { const first = D.steps.find(s => s.kind === "map");
+  map = new maplibregl.Map({ container: "map", style: `https://tiles.openfreemap.org/styles/${D.theme === "light" ? "positron" : "dark"}`, center: first.center, zoom: first.zoom,
+    pitch: first.pitch, bearing: first.bearing, interactive: false, attributionControl: { compact: true, customAttribution: "OpenFreeMap" } }); }
+function setMarkers(list) { markers.forEach(m => m.remove()); markers = (list || []).map(mk => { const el = document.createElement("div"); el.className = "pin";
+  el.innerHTML = "<i></i><span></span>"; el.querySelector("span").textContent = mk.label; return new maplibregl.Marker({ element: el, anchor: "left" }).setLngLat(mk.lnglat).addTo(map); }); }
+let active = -1, shown = null;
+function activate(i) {
+  if (i === active) return; active = i; const s = D.steps[i];
+  document.querySelectorAll(".step").forEach(el => el.classList.toggle("on", +el.dataset.i === i));
+  $("dim").classList.toggle("on", s.kind === "text");
+  if (s.kind === "map" && map) { const view = { center: s.center, zoom: s.zoom, pitch: s.pitch, bearing: s.bearing };
+    reduce ? map.jumpTo(view) : map.flyTo({ ...view, duration: 2400, essential: true }); setMarkers([s.marker, ...(s.markers || [])].filter(Boolean)); shown = null; }
+  if (layers[i]) shown = i;
+  if (s.kind === "map") shown = null;
+  layers.forEach((l, k) => l && l.classList.toggle("on", k === shown));
+}
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) activate(+e.target.dataset.i); }), { rootMargin: "-50% 0px -50% 0px" });
+document.querySelectorAll(".step").forEach(el => io.observe(el));
+// compare steps: the divider follows the reader's progress through the step
+function onScroll() { if (active < 0 || D.steps[active].kind !== "compare") return; const el = document.querySelector(`.step[data-i="${active}"]`), r = el.getBoundingClientRect();
+  const k = Math.max(0.02, Math.min(0.98, (innerHeight / 2 - r.top) / r.height * 1.25)), l = layers[active];
+  l.querySelector(".top").style.clipPath = `inset(0 ${(1 - k) * 100}% 0 0)`; l.querySelector(".bar").style.left = k * 100 + "%"; }
+addEventListener("scroll", onScroll, { passive: true });
+activate(0);
+// sources
+const src = [D.sources, ...D.credits].filter(Boolean); if (D.map) src.push("Maps: OpenFreeMap © OpenMapTiles, data © OpenStreetMap contributors.");
+$("foot").innerHTML = `<h2>Sources and credits</h2><ul>${src.map(() => "<li></li>").join("")}</ul><p>Made with osint-visuals.</p>`;
+$("foot").querySelectorAll("li").forEach((li, i) => li.textContent = src[i]);
+</script>
+</body></html>
