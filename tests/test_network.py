@@ -9,7 +9,7 @@ import unittest
 
 import importlib.util
 
-SKILL = Path(__file__).resolve().parents[1] / "skills/html-network-visualisation"
+SKILL = Path(__file__).resolve().parents[1] / "skills/network-graph"
 spec = importlib.util.spec_from_file_location("network", SKILL / "scripts/network.py")
 network = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(network)

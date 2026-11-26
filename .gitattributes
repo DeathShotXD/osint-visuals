@@ -1,2 +1,2 @@
 # Preserve the exact bytes checked against the bundled library's SHA-384 pin.
-skills/html-network-visualisation/assets/vendor/vis-network.min.js -text
+skills/network-graph/assets/vendor/vis-network.min.js -text

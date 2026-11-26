@@ -151,7 +151,7 @@ def review(html, output):
         mobile.close()
 
         # Exercise imported text through the actual browser and graph library.
-        skill = Path(__file__).resolve().parents[1] / "skills/html-network-visualisation"
+        skill = Path(__file__).resolve().parents[1] / "skills/network-graph"
         spec = importlib.util.spec_from_file_location("network", skill / "scripts/network.py")
         renderer = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(renderer)

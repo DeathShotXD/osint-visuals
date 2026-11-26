@@ -1,9 +1,9 @@
 ---
-name: html-network-visualisation
+name: network-graph
 description: Make an explorable, source-linked relationship network from JSON, with search, evidence filters, one/two-step neighbourhoods, graph physics and a connection table. Use when the user asks to visualise relationships between entities or inspect the records behind a network. Produces an offline HTML snapshot and native graph JSON.
 ---
 
-# HTML network visualisation
+# network-graph
 
 Makes one HTML page with the graph, its supporting records and its library embedded. Open it offline, inspect a
 node or connection, change the layout and filters, then export a PNG or save the current view as JSON. The native

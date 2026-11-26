@@ -38,7 +38,7 @@ The fallback uses Unicode code points. See [the multilingual fixture](../assets/
 From the repository root:
 
 ```
-python3 skills/html-network-visualisation/scripts/network.py --input skills/html-network-visualisation/assets/demo.json --output examples/network/new-demo.html
+python3 skills/network-graph/scripts/network.py --input skills/network-graph/assets/demo.json --output examples/network/new-demo.html
 python3 -m unittest discover -s tests
 ```
 

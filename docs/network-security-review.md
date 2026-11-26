@@ -1,6 +1,6 @@
 # Network skill: verification and security review
 
-Checked on 25 November 2026 for the HTML network visualisation contribution. The scope is the new skill, its two
+Checked on 25 November 2026 for the network-graph contribution. The scope is the new skill, its two
 fictional datasets, generated examples and review tools. This is a focused review, not a security audit of the other
 skills or a guarantee against all vulnerabilities.
 
@@ -27,7 +27,7 @@ exploration uploads data or needs a server. All source records, including filter
 native graph JSON: remove sensitive content before generating a distributable file. View-state JSON has no import
 feature and is not a redacted dataset.
 
-Browser review is repeatable with the commands in the [schema and build reference](../skills/html-network-visualisation/references/schema-and-build.md#commands).
+Browser review is repeatable with the commands in the [schema and build reference](../skills/network-graph/references/schema-and-build.md#commands).
 It uses bounded synthetic fixtures; it does not establish large-network performance, remote source availability or
 source truth. Font coverage depends on the viewer's installed fonts. Other browsers and operating systems have not
 been visually verified by this review.
