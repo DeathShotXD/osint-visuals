@@ -22,6 +22,12 @@ import os
 import sys
 from datetime import datetime, timezone, timedelta
 
+
+def page_json(obj):
+    """JSON for a <script> block. '<' is escaped so an input value can never close the tag."""
+    return (json.dumps(obj, separators=(",", ":"))
+            .replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e"))
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "..", "assets", "track.html")
 COLOURS = ["#4FC3F7", "#FFB74D", "#81C784", "#F06292", "#BA68C8", "#4DB6AC", "#FFF176"]
@@ -209,7 +215,7 @@ def main(argv=None):
             "meetings": meets, "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
             "input": os.path.basename(a.csv), "skipped_rows": skipped}
     page = open(TEMPLATE, encoding="utf-8").read()
-    page = page.replace("/*__DATA__*/null", json.dumps(data, separators=(",", ":"))).replace("__TITLE__", html.escape(a.title))
+    page = page.replace("/*__DATA__*/null", page_json(data)).replace("__TITLE__", html.escape(a.title))
     dest = a.out or os.path.splitext(a.csv)[0] + "_track.html"
     open(dest, "w", encoding="utf-8").write(page)
     print(f"wrote {dest}")

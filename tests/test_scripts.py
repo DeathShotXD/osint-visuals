@@ -163,5 +163,27 @@ class ScrollStory(unittest.TestCase):
             self.assertTrue(os.path.exists(os.path.join(app, "src", "lib", "Scrolly.svelte")))
 
 
+class Escape(unittest.TestCase):
+    """An input value must never be able to close the <script> block that carries the page data."""
+
+    def test_track_values_cannot_close_the_script(self):
+        with tempfile.TemporaryDirectory() as d:
+            csvp, dest = os.path.join(d, "x.csv"), os.path.join(d, "x.html")
+            open(csvp, "w").write("vessel,timestamp,lat,lon\n"
+                                  "</script><b>PROOF</b>,2026-06-09T06:00:00Z,24.0,58.0\n"
+                                  "SAFE,2026-06-09T08:00:00Z,24.2,58.2\n")
+            track.main([csvp, "--source", "</script><b>PROOF</b>", "--out", dest])
+            s = open(dest, encoding="utf-8").read()
+            self.assertNotIn("<b>PROOF</b>", s)
+            self.assertIn("\\u003c/script", s)
+
+    def test_story_metadata_cannot_close_the_script(self):
+        with tempfile.TemporaryDirectory() as d:
+            src, dest = os.path.join(d, "s.md"), os.path.join(d, "s.html")
+            open(src, "w").write("---\ntitle: t\nsources: </script><b>PROOF</b>\n---\n\n[text]\nHello.\n")
+            story.main([src, "--out", dest])
+            self.assertNotIn("<b>PROOF</b>", open(dest, encoding="utf-8").read())
+
+
 if __name__ == "__main__":
     unittest.main()

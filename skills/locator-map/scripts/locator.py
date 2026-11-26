@@ -20,6 +20,12 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
+
+def page_json(obj):
+    """JSON for a <script> block. '<' is escaped so an input value can never close the tag."""
+    return (json.dumps(obj, separators=(",", ":"))
+            .replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e"))
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "..", "assets", "locator.html")
 CACHE = os.path.join(os.path.expanduser("~"), ".cache", "osint-visuals")
@@ -161,7 +167,7 @@ def main(argv=None):
             "lat": a.lat, "lon": a.lon, "hw": hw, "country": hname, "countries": main_c, "globe": globe, "cities": cities[:40],
             "source": a.source, "geocoded": bool(geo), "theme": a.theme, "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
     page = open(TEMPLATE, encoding="utf-8").read()
-    page = page.replace("/*__DATA__*/null", json.dumps(data, separators=(",", ":"))).replace("__TITLE__", html.escape(data["title"]))
+    page = page.replace("/*__DATA__*/null", page_json(data)).replace("__TITLE__", html.escape(data["title"]))
     dest = a.out or "locator-" + "".join(c if c.isalnum() else "-" for c in label.lower()).strip("-") + ".html"
     open(dest, "w", encoding="utf-8").write(page)
     print(f"wrote {dest} ({os.path.getsize(dest) // 1024} KB)")
