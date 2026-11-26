@@ -1,0 +1,393 @@
+{
+  "title": "Fictional multilingual workshop",
+  "subtitle": "Unicode names and source excerpts; English interface",
+  "handling": "SYNTHETIC EXAMPLE · NO REAL SUBJECTS",
+  "scope_note": "Invented catalogue entries in different scripts. Each arrow means listed in the fictional workshop catalogue. Names, quotations and connections are fabricated; script or spelling does not establish identity.",
+  "footer_note": "Synthetic catalogue only. Layout does not measure geography or influence.",
+  "types": {
+    "entry": {
+      "label": "Fictional catalogue entry",
+      "shape": "dot"
+    },
+    "workshop": {
+      "label": "Fictional workshop",
+      "shape": "square"
+    }
+  },
+  "relations": {
+    "listed": {
+      "label": "Listed in",
+      "description": "Entry listed in a fabricated catalogue; no real affiliation is claimed.",
+      "default": true
+    }
+  },
+  "nodes": [
+    {
+      "id": "workshop",
+      "label": "Fictional workshop",
+      "kind": "workshop",
+      "records": [],
+      "own_mentions": [],
+      "mentions": [
+        "accents",
+        "arabic",
+        "chinese",
+        "cyrillic",
+        "devanagari",
+        "greek",
+        "hebrew",
+        "japanese",
+        "korean",
+        "mixed"
+      ]
+    },
+    {
+      "id": "arabic",
+      "label": "كيان تجريبي ألف",
+      "kind": "entry",
+      "records": [],
+      "own_mentions": [],
+      "mentions": [
+        "arabic"
+      ]
+    },
+    {
+      "id": "hebrew",
+      "label": "ישות לדוגמה א",
+      "kind": "entry",
+      "records": [],
+      "own_mentions": [],
+      "mentions": [
+        "hebrew"
+      ]
+    },
+    {
+      "id": "chinese",
+      "label": "虚构实体甲",
+      "kind": "entry",
+      "records": [],
+      "own_mentions": [],
+      "mentions": [
+        "chinese"
+      ]
+    },
+    {
+      "id": "japanese",
+      "label": "架空の組織ア",
+      "kind": "entry",
+      "records": [],
+      "own_mentions": [],
+      "mentions": [
+        "japanese"
+      ]
+    },
+    {
+      "id": "cyrillic",
+      "label": "Вымышленная группа А",
+      "kind": "entry",
+      "records": [],
+      "own_mentions": [],
+      "mentions": [
+        "cyrillic"
+      ]
+    },
+    {
+      "id": "greek",
+      "label": "Φανταστική ομάδα Α",
+      "kind": "entry",
+      "records": [],
+      "own_mentions": [],
+      "mentions": [
+        "greek"
+      ]
+    },
+    {
+      "id": "devanagari",
+      "label": "काल्पनिक समूह अ",
+      "kind": "entry",
+      "records": [],
+      "own_mentions": [],
+      "mentions": [
+        "devanagari"
+      ]
+    },
+    {
+      "id": "korean",
+      "label": "가상 단체 가",
+      "kind": "entry",
+      "records": [],
+      "own_mentions": [],
+      "mentions": [
+        "korean"
+      ]
+    },
+    {
+      "id": "accents",
+      "label": "Atelier fictif Étoile",
+      "kind": "entry",
+      "records": [],
+      "own_mentions": [],
+      "mentions": [
+        "accents"
+      ]
+    },
+    {
+      "id": "mixed",
+      "label": "كيان تجريبي B-12 🧪",
+      "kind": "entry",
+      "records": [],
+      "own_mentions": [],
+      "mentions": [
+        "mixed"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-arabic",
+      "from": "arabic",
+      "to": "workshop",
+      "relation": "listed",
+      "records": [
+        "arabic"
+      ],
+      "mentions": [
+        "arabic"
+      ]
+    },
+    {
+      "id": "e-hebrew",
+      "from": "hebrew",
+      "to": "workshop",
+      "relation": "listed",
+      "records": [
+        "hebrew"
+      ],
+      "mentions": [
+        "hebrew"
+      ]
+    },
+    {
+      "id": "e-chinese",
+      "from": "chinese",
+      "to": "workshop",
+      "relation": "listed",
+      "records": [
+        "chinese"
+      ],
+      "mentions": [
+        "chinese"
+      ]
+    },
+    {
+      "id": "e-japanese",
+      "from": "japanese",
+      "to": "workshop",
+      "relation": "listed",
+      "records": [
+        "japanese"
+      ],
+      "mentions": [
+        "japanese"
+      ]
+    },
+    {
+      "id": "e-cyrillic",
+      "from": "cyrillic",
+      "to": "workshop",
+      "relation": "listed",
+      "records": [
+        "cyrillic"
+      ],
+      "mentions": [
+        "cyrillic"
+      ]
+    },
+    {
+      "id": "e-greek",
+      "from": "greek",
+      "to": "workshop",
+      "relation": "listed",
+      "records": [
+        "greek"
+      ],
+      "mentions": [
+        "greek"
+      ]
+    },
+    {
+      "id": "e-devanagari",
+      "from": "devanagari",
+      "to": "workshop",
+      "relation": "listed",
+      "records": [
+        "devanagari"
+      ],
+      "mentions": [
+        "devanagari"
+      ]
+    },
+    {
+      "id": "e-korean",
+      "from": "korean",
+      "to": "workshop",
+      "relation": "listed",
+      "records": [
+        "korean"
+      ],
+      "mentions": [
+        "korean"
+      ]
+    },
+    {
+      "id": "e-accents",
+      "from": "accents",
+      "to": "workshop",
+      "relation": "listed",
+      "records": [
+        "accents"
+      ],
+      "mentions": [
+        "accents"
+      ]
+    },
+    {
+      "id": "e-mixed",
+      "from": "mixed",
+      "to": "workshop",
+      "relation": "listed",
+      "records": [
+        "mixed"
+      ],
+      "mentions": [
+        "mixed"
+      ]
+    }
+  ],
+  "records": {
+    "arabic": {
+      "label": "سجل تجريبي",
+      "status": "recorded",
+      "sources": [
+        {
+          "label": "Fictional catalogue",
+          "locator": "Arabic example",
+          "quote": "هذا مثال خيالي فقط."
+        }
+      ]
+    },
+    "hebrew": {
+      "label": "רשומה לדוגמה",
+      "status": "recorded",
+      "sources": [
+        {
+          "label": "Fictional catalogue",
+          "locator": "Hebrew example",
+          "quote": "זו דוגמה בדיונית בלבד."
+        }
+      ]
+    },
+    "chinese": {
+      "label": "虚构记录",
+      "status": "recorded",
+      "sources": [
+        {
+          "label": "Fictional catalogue",
+          "locator": "Chinese example",
+          "quote": "这只是虚构的示例。"
+        }
+      ]
+    },
+    "japanese": {
+      "label": "架空の記録",
+      "status": "recorded",
+      "sources": [
+        {
+          "label": "Fictional catalogue",
+          "locator": "Japanese example",
+          "quote": "これは架空の例です。"
+        }
+      ]
+    },
+    "cyrillic": {
+      "label": "Вымышленная запись",
+      "status": "recorded",
+      "sources": [
+        {
+          "label": "Fictional catalogue",
+          "locator": "Cyrillic example",
+          "quote": "Это только вымышленный пример."
+        }
+      ]
+    },
+    "greek": {
+      "label": "Φανταστική εγγραφή",
+      "status": "recorded",
+      "sources": [
+        {
+          "label": "Fictional catalogue",
+          "locator": "Greek example",
+          "quote": "Αυτό είναι μόνο ένα φανταστικό παράδειγμα."
+        }
+      ]
+    },
+    "devanagari": {
+      "label": "काल्पनिक अभिलेख",
+      "status": "recorded",
+      "sources": [
+        {
+          "label": "Fictional catalogue",
+          "locator": "Devanagari example",
+          "quote": "यह केवल एक काल्पनिक उदाहरण है।"
+        }
+      ]
+    },
+    "korean": {
+      "label": "가상 기록",
+      "status": "recorded",
+      "sources": [
+        {
+          "label": "Fictional catalogue",
+          "locator": "Korean example",
+          "quote": "이것은 가상의 예시입니다."
+        }
+      ]
+    },
+    "accents": {
+      "label": "Notice fictive",
+      "status": "recorded",
+      "sources": [
+        {
+          "label": "Fictional catalogue",
+          "locator": "Accented Latin example",
+          "quote": "Ceci est un exemple fictif."
+        }
+      ]
+    },
+    "mixed": {
+      "label": "سجل تجريبي B-12",
+      "status": "review",
+      "uncertainty": [
+        "Invented entry marked review to exercise filtering."
+      ],
+      "sources": [
+        {
+          "label": "Fictional catalogue",
+          "locator": "Mixed-script example",
+          "quote": "مثال خيالي B-12 🧪"
+        }
+      ]
+    }
+  },
+  "counts": {
+    "nodes": 11,
+    "edges": 10,
+    "records": 10,
+    "review_records": 1
+  },
+  "renderer": {
+    "library": "vis-network 9.1.6",
+    "sha384": "Ux6phic9PEHJ38YtrijhkzyJ8yQlH8i/+buBR8s3mAZOJrP1gwyvAcIYl3GWtpX1",
+    "source": "https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"
+  }
+}

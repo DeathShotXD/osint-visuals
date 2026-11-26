@@ -3,10 +3,11 @@
 **Evidence graphics for open-source investigations, made by your AI agent.** Ask in plain words and get a
 publication-ready visual that carries its own sources: an animated ship track that flags where it went dark, a shadow
 diagram that tests a claimed time, a 3D miniature of the scene with the camera's line of sight, a newsroom locator
-map, a before-and-after satellite slider, or a whole scrolling map story.
+map, a before-and-after satellite slider, a whole scrolling map story, or an explorable relationship network with
+the records behind each connection.
 
-Six skills in the open [Agent Skills](https://agentskills.io) format, for Claude Code and other agents. Each one
-writes **a single HTML file**. The five graphics have export built in: PNG for all five, WebM video for track-map,
+Seven skills in the open [Agent Skills](https://agentskills.io) format, for Claude Code and other agents. Each one
+writes **a single HTML file**. The six graphics have export built in: PNG for all six, WebM video for track-map,
 scene-diorama and before-after, SVG for shadow-diagram and locator-map. The scroll story can also be written as a
 Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only (on Windows, `--tz` zone names need
 `pip install tzdata`; offsets like +03:00 work everywhere), no API keys.
@@ -20,6 +21,12 @@ Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only 
 | ![A before-and-after slider of Lahaina, Maui, on 29 July and 18 August 2023](docs/gallery/before-after.png) | ![A scroll story: a map step with a marker on a desktop screen, and a satellite picture step on a phone](docs/gallery/scroll-story.png) |
 | **before-after**: a slider readers can drag, from free NASA imagery (the clearest pass near each date is picked for you) or your own licensed images. | **scroll-story**: a plain-text script becomes a scrolling story: the map flies between places, pictures change, the before/after divider moves with the scroll. Also as a Svelte project. |
 
+![A fictional relationship network with search, layout controls and source inspection](docs/gallery/html-network-visualisation.png)
+
+**html-network-visualisation**: JSON entities and source records become an offline graph with relationship/review
+filters, one/two-step neighbourhoods, a connection table and adjustable physics. Export PNG, save the current view,
+or inspect the accompanying native graph JSON. [Open the fictional demo](examples/network/demo.html).
+
 ![The approximate view from the camera position in the diorama](docs/gallery/scene-diorama-camera-view.png)
 
 *The diorama's camera's view: the scene from where the footage was filmed, to compare with the frame.*
@@ -27,6 +34,7 @@ Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only 
 The track, shadow, diorama and locator examples use invented scenarios (fictional ships, claims and events) on real
 maps. The before-after and scroll-story examples use real NASA imagery of Lahaina, Maui, before and after the
 wildfire of 8 August 2023.
+The network example uses only fictional entities, records and quotations; it contains no real investigation data.
 
 ## Why
 
@@ -56,6 +64,7 @@ Then ask, for example:
 - "Build a diorama of Prešeren Square in Ljubljana with the camera on the first floor at 46.05098, 14.50712 looking at
   the crowd at 46.05143, 14.50606"
 - "Locator map for Beira, Mozambique, 4:5 for Instagram"
+- "Make an offline relationship network from this JSON, with sources behind each connection"
 
 ## Works with
 
@@ -101,6 +110,7 @@ python3 skills/locator-map/scripts/locator.py --place "Beira, Mozambique" --titl
 python3 skills/before-after/scripts/before_after.py --lat 20.873 --lon -156.677 --km 1.8 \
     --before 2023-08-05 --after 2023-08-10 --title "Lahaina before and after the fire"
 python3 skills/scroll-story/scripts/story.py examples/scroll-story/demo.md --svelte story-app/
+python3 skills/html-network-visualisation/scripts/network.py --input skills/html-network-visualisation/assets/demo.json --output network.html
 ```
 
 Each prints what it found (gaps, windows, matches) and writes the page. Open it in a browser, pick a frame (16:9, 1:1,
@@ -108,6 +118,10 @@ Each prints what it found (gaps, windows, matches) and writes the page. Open it 
 pinned libraries (MapLibre, three.js, d3) from unpkg, and the track map and the scroll story's map steps load tiles from
 OpenFreeMap, so they need a connection when opened. The shadow and before-after pages are fully self-contained
 (before-after embeds both images). The scroll story's Svelte project needs Node 20.19+, 22.12+ or 24+ to build (Vite 8's requirement).
+
+The network page embeds its integrity-checked vis-network library, data and styling, so it works offline without a
+server. Only clicking an external source link contacts its host. It also writes native graph JSON; view-state JSON
+records filters and layout and is not a replacement for the dataset. See its [schema and commands](skills/html-network-visualisation/references/schema-and-build.md).
 
 ## Data, and the rules that come with it
 
@@ -119,6 +133,7 @@ OpenFreeMap, so they need a connection when opened. The shadow and before-after 
 | shadow-diagram | none | Sun positions computed locally (NOAA equations). |
 | before-after | your images, or [NASA GIBS](https://www.earthdata.nasa.gov/gibs) (HLS, VIIRS, MODIS) | Keyless; the graphic credits NASA GIBS and, for HLS Sentinel-2, "contains modified Copernicus Sentinel data". The date search fetches up to one small preview per day, from the asked-for date out to 12 days before or after (`--window`), stopping early at a clear pass; cached. Your own images: their owner's terms. |
 | scroll-story | your script and images; map steps from OpenFreeMap | Map credit in the page's sources footer; every image needs its own credit. |
+| html-network-visualisation | your JSON and supporting records | Your sources' own terms apply. Bundled vis-network is MIT/Apache-2.0; [licences and notices](skills/html-network-visualisation/assets/vendor/NOTICE.md) are included. |
 
 The scripts' downloads are cached in `~/.cache/osint-visuals` and never expire; delete a file there to fetch fresh
 OpenStreetMap data. The scripts send an identifying User-Agent and only what each lookup needs (the place name, or the
@@ -142,6 +157,8 @@ These limits are written into the skills. If you fork the pack, please keep them
 - Locator borders follow Natural Earth's de facto lines. For disputed areas, follow your outlet's style guide.
 - Free NASA HLS imagery is 30 m a pixel: single buildings are not visible, and some places (remote islands, some ocean
   areas) have no data on many dates. For detail, use licensed commercial imagery with `--before-image`/`--after-image`.
+- Network positions reflect physics, not geography or influence. `recorded` means source support was included, not
+  verified truth. Filters hide records visually; the HTML and native JSON still contain the whole supplied dataset.
 
 ## Tests
 
@@ -154,6 +171,16 @@ noon sun at the December solstice), the shadow windows and claim check, page wri
 before-after, the diorama and locator geometry helpers, the PNG reader and cloud score used to pick clear satellite
 passes, and the scroll-story parser, its text escaping and its Svelte export.
 
+Network tests cover identities, endpoints, supporting records, malformed inputs, safe links, escaping, library
+integrity, portable installation and output protection. The optional [browser review](skills/html-network-visualisation/references/schema-and-build.md#commands)
+checks the fictional network with networking disabled. See the [network security review](docs/network-security-review.md)
+for the checks performed and their scope.
+
+Network entity names and records support Unicode scripts, including right-to-left text, while the interface stays
+in English. [Multilingual fictional data](skills/html-network-visualisation/assets/multilingual.json) and
+[a rendered example](examples/network/multilingual.html) exercise search, source inspection, tables, print and PNG.
+[Preview the multilingual graph](docs/gallery/network-multilingual.png).
+
 ## Related
 
 - [osint-skills](https://github.com/Ghongha007/osint-skills): verification skills (geolocate, chronolocate, archive evidence, attribute claims)
@@ -164,3 +191,5 @@ passes, and the scroll-story parser, its text escaping and its Svelte export.
 ## Licence
 
 MIT. Made by [OSINT JOURNO](https://github.com/OSINT-JOURNO).
+
+HTML network visualisation contributed by [thomasjjj](https://github.com/thomasjjj).

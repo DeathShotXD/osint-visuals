@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><title>Interactive network</title>
+<style>__NETWORK_CSS__</style></head>
+<body class="network-app">
+<header class="masthead"><div><p id="handling" class="eyebrow"></p><h1 dir="auto" id="networkTitle"></h1><p id="subtitle" class="subtitle"></p></div><div class="source-links"><span id="headerLinks" class="source-links"></span><button id="exportPNG">Export PNG</button><button id="downloadView">Download view</button><button id="copyView">Copy view</button></div></header>
+<div dir="auto" id="scopeNote" class="scope-note"></div>
+<main class="workspace">
+<aside class="controls"><details open id="controlDetails"><summary>Explore &amp; physics</summary>
+<label class="block" for="search">Find a node</label><input id="search" type="search" placeholder="Search labels…" autocomplete="off"><div id="searchResults" class="search-results" aria-live="polite"></div>
+<h2>Connections</h2><div id="relationFilters"></div>
+<label><input id="includeReview" type="checkbox" checked> Include review candidates</label>
+<label><input id="includeIsolates" type="checkbox"> Include isolated nodes</label>
+<label class="block" for="focusDepth">Neighbourhood</label><select id="focusDepth"><option value="0">Whole network</option><option value="1">Selected node · 1 step</option><option value="2">Selected node · 2 steps</option></select>
+<div class="button-row"><button id="allConnections">All connections</button><button id="resetFilters">Reset filters</button></div>
+<h2>Graph physics</h2><label><input id="physics" type="checkbox" checked> Physics on</label>
+<label class="block" for="repulsion">Repulsion <output id="repulsionValue">4,000</output></label><input id="repulsion" type="range" min="500" max="16000" step="500" value="4000">
+<label class="block" for="spring">Spring length <output id="springValue">130</output></label><input id="spring" type="range" min="50" max="400" step="10" value="130">
+<label class="block" for="damping">Damping <output id="dampingValue">0.25</output></label><input id="damping" type="range" min="0.05" max="0.9" step="0.05" value="0.25">
+<div class="button-row"><button id="reheat">Reheat</button><button id="fit">Fit graph</button></div>
+<label><input id="showLabels" type="checkbox" checked> Show labels</label><button id="pinSelected" disabled>Pin selected node</button>
+<h2>Key</h2><div id="typeLegend" class="legend"></div>
+<p class="small">Line weight counts supporting records, not independent corroboration. Physics positions are not geography or influence.</p>
+</details></aside>
+<section class="stage" aria-label="Interactive network">
+<div class="view-bar"><div class="tabs"><button id="graphTab" aria-pressed="true">Graph</button><button id="tableTab" aria-pressed="false">Connection table</button></div><span id="liveStats" role="status"></span></div>
+<div id="graph" tabindex="0" aria-label="Physics graph. Drag nodes; scroll to zoom. Search or use the connection table for keyboard access."></div>
+<div id="tablePanel" hidden><p id="tableCaption"></p><div class="table-wrap"><table><thead><tr><th>From</th><th>Connection</th><th>To</th><th>Records</th><th>Evidence state</th></tr></thead><tbody id="edgeRows"></tbody></table></div><div class="button-row"><button id="previousRows">Previous</button><button id="nextRows">Next</button><span id="tablePage"></span></div></div>
+<div class="stage-footer"><span id="physicsStatus" role="status">Preparing layout…</span><span>Drag to move · scroll to zoom · click a node or line for sources</span></div>
+</section>
+<aside class="inspector" id="inspector" aria-label="Selection and provenance"><h2>Inspect a connection</h2><p>Select a node or line to inspect its details and source records.</p><div id="summaryStats"></div></aside>
+</main>
+<section id="exportPanel" hidden aria-label="Copy view fallback"><h2>Copy the current view</h2><p>Clipboard access is unavailable. Select and copy this JSON, or use Download view. It includes the current filters, physics settings, positions and pinned nodes.</p><textarea id="exportText" dir="ltr" readonly></textarea><button id="closeExport">Close</button></section>
+<footer class="page-footer"><span id="footerNote"></span><span id="exportStatus" role="status"></span></footer>
+<script id="network-data" type="application/json">__GRAPH_JSON__</script>
+<script>__VIS_LIBRARY__</script><script>__NETWORK_JS__</script></body></html>

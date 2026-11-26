@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "title": "Synthetic network demo",
+  "subtitle": "Fictional records for template testing",
+  "handling": "SYNTHETIC EXAMPLE · NO REAL SUBJECTS",
+  "scope_note": "Every node, connection and quotation in this example is fictional. Recorded support is not a truth or identity assessment.",
+  "identity_note": "IDs are supplied by the input. The renderer never merges labels or infers relationships.",
+  "footer_note": "Line weight counts supporting records; positions come from graph physics.",
+  "types": {
+    "person": {
+      "label": "Fictional person",
+      "shape": "dot"
+    },
+    "organisation": {
+      "label": "Fictional organisation",
+      "shape": "triangle"
+    },
+    "place": {
+      "label": "Fictional place",
+      "shape": "diamond"
+    }
+  },
+  "relations": {
+    "membership": {
+      "label": "Membership",
+      "default": true,
+      "description": "A membership field in a fictional source."
+    },
+    "located": {
+      "label": "Location",
+      "default": true,
+      "description": "A fictional location field."
+    },
+    "collaboration": {
+      "label": "Collaboration",
+      "default": false,
+      "description": "A fictional undirected collaboration claim needing review."
+    }
+  },
+  "nodes": [
+    {
+      "id": "alpha",
+      "label": "Example Alpha α",
+      "kind": "person",
+      "records": [
+        "r1"
+      ]
+    },
+    {
+      "id": "beta",
+      "label": "Example Beta",
+      "kind": "person",
+      "records": [
+        "r2"
+      ]
+    },
+    {
+      "id": "gamma",
+      "label": "Example Gamma",
+      "kind": "person",
+      "records": [
+        "r3"
+      ]
+    },
+    {
+      "id": "org",
+      "label": "Example Workshop",
+      "kind": "organisation",
+      "records": []
+    },
+    {
+      "id": "place",
+      "label": "Example Harbour",
+      "kind": "place",
+      "records": []
+    },
+    {
+      "id": "isolated",
+      "label": "Example Isolated",
+      "kind": "person",
+      "records": [
+        "r5"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "alpha",
+      "to": "org",
+      "relation": "membership",
+      "records": [
+        "r1"
+      ]
+    },
+    {
+      "id": "e2",
+      "from": "beta",
+      "to": "org",
+      "relation": "membership",
+      "records": [
+        "r2"
+      ]
+    },
+    {
+      "id": "e3",
+      "from": "org",
+      "to": "place",
+      "relation": "located",
+      "records": [
+        "r3"
+      ]
+    },
+    {
+      "id": "e4",
+      "from": "beta",
+      "to": "gamma",
+      "relation": "collaboration",
+      "directed": false,
+      "records": [
+        "r4"
+      ]
+    }
+  ],
+  "records": {
+    "r1": {
+      "label": "Synthetic record 1",
+      "status": "recorded",
+      "details": "This is a fabricated statement used only to exercise the template.",
+      "fields": {
+        "Example field": "Value 1"
+      },
+      "sources": [
+        {
+          "label": "Embedded synthetic fixture",
+          "locator": "Fictional section 1",
+          "quote": "Synthetic example quotation 1; no source claim is made."
+        }
+      ]
+    },
+    "r2": {
+      "label": "Synthetic record 2",
+      "status": "recorded",
+      "details": "This is a fabricated statement used only to exercise the template.",
+      "fields": {
+        "Example field": "Value 2"
+      },
+      "sources": [
+        {
+          "label": "Embedded synthetic fixture",
+          "locator": "Fictional section 2",
+          "quote": "Synthetic example quotation 2; no source claim is made."
+        }
+      ]
+    },
+    "r3": {
+      "label": "Synthetic record 3",
+      "status": "recorded",
+      "details": "This is a fabricated statement used only to exercise the template.",
+      "fields": {
+        "Example field": "Value 3"
+      },
+      "sources": [
+        {
+          "label": "Embedded synthetic fixture",
+          "locator": "Fictional section 3",
+          "quote": "Synthetic example quotation 3; no source claim is made."
+        }
+      ]
+    },
+    "r4": {
+      "label": "Synthetic record 4",
+      "status": "review",
+      "details": "This is a fabricated statement used only to exercise the template.",
+      "fields": {
+        "Example field": "Value 4"
+      },
+      "sources": [
+        {
+          "label": "Embedded synthetic fixture",
+          "locator": "Fictional section 4",
+          "quote": "Synthetic example quotation 4; no source claim is made."
+        }
+      ]
+    },
+    "r5": {
+      "label": "Synthetic record 5",
+      "status": "recorded",
+      "details": "This is a fabricated statement used only to exercise the template.",
+      "fields": {
+        "Example field": "Value 5"
+      },
+      "sources": [
+        {
+          "label": "Embedded synthetic fixture",
+          "locator": "Fictional section 5",
+          "quote": "Synthetic example quotation 5; no source claim is made."
+        }
+      ]
+    }
+  }
+}
