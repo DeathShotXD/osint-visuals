@@ -155,7 +155,8 @@ def write_svelte(dest, data, base):
             if k in s and not re.match(r"^(https?:|data:)", s[k]):
                 src = s[k] if os.path.isabs(s[k]) else os.path.join(base, s[k])
                 name = os.path.basename(src); shutil.copy(src, os.path.join(media, name)); s[k] = "media/" + name
-    json.dump(story, open(os.path.join(dest, "src", "story.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+    with open(os.path.join(dest, "src", "story.json"), "w", encoding="utf-8") as f:
+        json.dump(story, f, indent=1, ensure_ascii=False)
     print(f"wrote a Svelte project in {dest}: cd {dest} && npm install && npm run dev   (npm run build for a static site)")
 
 

@@ -27,7 +27,8 @@ python3 scripts/track.py positions.csv --title "..." --subtitle "..." --source "
 python3 scripts/track.py flights.csv --kind aircraft --gap 5m --max-speed 650
 ```
 
-Useful options: `--gap 6h` (what counts as going dark), `--meet-km 0.5 --meet-min 60` (what counts as side by side),
+Useful options: `--tz Asia/Dubai` or `--tz +04:00` for the clock (a zone name follows daylight-saving changes during
+the track; offsets don't, and the default is UTC), `--gap 6h` (what counts as going dark), `--meet-km 0.5 --meet-min 60` (what counts as side by side),
 `--theme light`. The script prints every gap, jump and meeting it found: read them before describing anything.
 
 ## How to report

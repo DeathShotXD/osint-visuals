@@ -41,14 +41,16 @@ def fetch(url, name):
         req = urllib.request.Request(url, headers={"User-Agent": UA})
         with urllib.request.urlopen(req, timeout=120) as r, open(path, "wb") as f:
             f.write(r.read())
-    return json.load(open(path, encoding="utf-8"))
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
 
 
 def geocode(q):
     os.makedirs(CACHE, exist_ok=True)
     key = os.path.join(CACHE, "nominatim-" + "".join(c if c.isalnum() else "_" for c in q.lower())[:80] + ".json")
     if os.path.exists(key):
-        return json.load(open(key))
+        with open(key, encoding="utf-8") as f:
+            return json.load(f)
     stamp = os.path.join(CACHE, ".nominatim-last")       # never more than one request a second, even across runs
     if os.path.exists(stamp):
         wait = 1.1 - (time.time() - os.path.getmtime(stamp))
@@ -58,7 +60,8 @@ def geocode(q):
     with urllib.request.urlopen(req, timeout=30) as r:
         res = json.load(r)
     open(stamp, "w").close()
-    json.dump(res, open(key, "w"))
+    with open(key, "w", encoding="utf-8") as f:
+        json.dump(res, f)
     return res
 
 

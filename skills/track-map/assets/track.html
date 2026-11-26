@@ -43,11 +43,12 @@ const T0 = Math.min(...D.tracks.map(t => t.pts[0][0])), T1 = Math.max(...D.track
 const GAPS = D.gaps.map(g => ({ ...g, t0: Date.parse(g.from) / 1000, t1: Date.parse(g.to) / 1000 }));
 const MEETS = D.meetings.map(m => ({ ...m, t0: Date.parse(m.from) / 1000, t1: Date.parse(m.to) / 1000 }));
 const JUMPS = D.jumps.map(j => ({ ...j, t: Date.parse(j.at) / 1000 }));
-const tzMin = (() => { const m = /([+-])(\d\d):?(\d\d)/.exec(D.tz || "+00:00"); return m ? (m[1] === "-" ? -1 : 1) * (+m[2] * 60 + +m[3]) : 0; })();
+const ZONES = D.tz_segments || [[0, 0, "UTC"]];      // [start, offset minutes, label]; a new one at each daylight-saving change
+function zoneAt(t) { let z = ZONES[0]; for (const s of ZONES) if (t >= s[0]) z = s; return z; }
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-function clock(t) { const d = new Date((t + tzMin * 60) * 1000), p = n => String(n).padStart(2, "0");
+function clock(t) { const z = zoneAt(t), d = new Date((t + z[1] * 60) * 1000), p = n => String(n).padStart(2, "0");
   return { date: `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`, time: `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`,
-    zone: tzMin === 0 ? "UTC" : `UTC${D.tz}` }; }
+    zone: z[2] }; }
 let t = T0, playing = false, last = 0, outW = 0, outH = 0, S = 1, u = 1, fmt = "screen", recording = null;
 
 // ------------------------------------------------------------------ map

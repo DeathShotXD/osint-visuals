@@ -55,13 +55,15 @@ out geom;"""
     os.makedirs(CACHE, exist_ok=True)
     key = os.path.join(CACHE, "overpass-" + hashlib.sha1(q.encode()).hexdigest()[:16] + ".json")
     if os.path.exists(key):
-        return json.load(open(key)), True
+        with open(key, encoding="utf-8") as f:
+            return json.load(f), True
     req = urllib.request.Request(OVERPASS, data=urllib.parse.urlencode({"data": q}).encode(), headers={"User-Agent": UA})
     for attempt in range(3):
         try:
             with urllib.request.urlopen(req, timeout=90) as r:
                 data = json.load(r)
-            json.dump(data, open(key, "w"))
+            with open(key, "w", encoding="utf-8") as f:
+                json.dump(data, f)
             return data, False
         except Exception as ex:                      # 429/504 mean the shared server is busy: wait, then stop
             if attempt == 2:

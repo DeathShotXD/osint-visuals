@@ -9,8 +9,9 @@ every connection opens the records behind it.
 Seven skills in the open [Agent Skills](https://agentskills.io) format, for Claude Code and other agents. Each one
 writes **a single HTML file**. The six graphics have export built in: PNG for all six, WebM video for track-map,
 scene-diorama and before-after, SVG for shadow-diagram and locator-map. The scroll story can also be written as a
-Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only, no API keys. Time zones: track-map's `--tz` takes an offset like
-+04:00; shadow-diagram's also takes a zone name like Africa/Nairobi (on Windows, names need `pip install tzdata`).
+Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only, no API keys. Time zones: `--tz` takes an offset like +04:00 or a
+zone name like Asia/Dubai; with a name, track-map's clock follows daylight-saving changes (on Windows, names need
+`pip install tzdata`).
 
 | | |
 |---|---|

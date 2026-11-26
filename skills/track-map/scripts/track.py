@@ -19,6 +19,7 @@ import html
 import json
 import math
 import os
+import re
 import sys
 from datetime import datetime, timezone, timedelta
 
@@ -69,6 +70,48 @@ def parse_span(s):
     return float(s[:-1]) * unit if unit else float(s)
 
 
+def fmt_offset(mins):
+    sign = "-" if mins < 0 else "+"
+    return f"{sign}{abs(mins) // 60:02d}:{abs(mins) % 60:02d}"
+
+
+def tz_segments(spec, t0, t1):
+    """The clock's time zone over [t0, t1] as [[start unix time, offset in minutes, label], ...].
+
+    An offset like +04:00 gives one segment. A zone name like Asia/Dubai or Europe/London is looked up, and a new
+    segment starts at each daylight-saving change inside the period, so the clock is right on both sides of it."""
+    s = spec.strip()
+    if s.upper() in ("Z", "UTC", "GMT"):
+        s = "+00:00"
+    if s[:1] in "+-":
+        m = re.fullmatch(r"([+-])(\d{1,2})(?::?(\d{2}))?", s)
+        mins = m and (-1 if m.group(1) == "-" else 1) * (int(m.group(2)) * 60 + int(m.group(3) or 0))
+        if not m or abs(mins) > 14 * 60 or int(m.group(3) or 0) >= 60:
+            sys.exit(f"--tz {spec!r}: not a valid offset. Use one like +04:00 or -05:30, or a zone name like Asia/Dubai.")
+        return [[int(t0.timestamp()), mins, "UTC" if mins == 0 else "UTC" + fmt_offset(mins)]]
+    try:
+        from zoneinfo import ZoneInfo
+        zone = ZoneInfo(s)
+    except Exception:                       # unknown name, or no time zone database (Windows: pip install tzdata)
+        sys.exit(f"--tz {spec!r}: unknown time zone. Use an offset like +04:00, or a zone name like Asia/Dubai "
+                 "(on Windows, run 'pip install tzdata' first).")
+    off = lambda t: int(t.astimezone(zone).utcoffset().total_seconds() // 60)
+    label = lambda mins: f"{s} (UTC{fmt_offset(mins)})"
+    cur = off(t0); segs = [[int(t0.timestamp()), cur, label(cur)]]
+    t, step = t0, timedelta(hours=1)
+    while t < t1:
+        n = min(t + step, t1); o = off(n)
+        if o != cur:                         # a change happened in (t, n]: narrow it down to the second
+            lo, hi = t, n
+            while (hi - lo).total_seconds() > 1:
+                mid = lo + (hi - lo) / 2
+                if off(mid) == cur: lo = mid
+                else: hi = mid
+            segs.append([math.ceil(hi.timestamp()), o, label(o)]); cur = o
+        t = n
+    return segs
+
+
 def km(a, b):
     """Great-circle distance in km between (lat, lon) pairs."""
     la1, lo1, la2, lo2 = map(math.radians, (a[0], a[1], b[0], b[1]))
@@ -95,6 +138,9 @@ def read_tracks(path):
             skipped += 1; continue          # 0,0 is the classic "no fix" value
         key = (r.get(cid) or "").strip() if cid else ""
         tracks.setdefault(key or "Track", []).append((t, la, lo))
+    if not tracks:
+        sys.exit(f"{path}: none of the {len(rows)} rows could be used. Every row had a time, latitude or longitude that "
+                 "couldn't be read, a position outside the map, or 0,0 (no fix).")
     for k in tracks:
         tracks[k] = sorted(set(tracks[k]))
     return tracks, skipped, cid
@@ -199,27 +245,33 @@ def main(argv=None):
     ap.add_argument("--max-speed", type=float, default=None, help="knots; faster jumps are flagged (default: 50 ships, 700 aircraft)")
     ap.add_argument("--meet-km", type=float, default=1.0, help="distance that counts as a meeting (km)")
     ap.add_argument("--meet-min", type=float, default=30, help="minimum length of a meeting (minutes)")
-    ap.add_argument("--tz", default="+00:00", help="time zone for the on-screen clock, e.g. +04:00 (default UTC)")
+    ap.add_argument("--tz", default="+00:00", help="time zone for the on-screen clock: an offset like +04:00, or a zone name like Asia/Dubai, "
+                    "which follows daylight saving (default UTC)")
     ap.add_argument("--theme", choices=["dark", "light"], default="dark")
     ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
     gap_s = parse_span(a.gap or ("2h" if a.kind == "ship" else "5m"))
     max_kn = a.max_speed or (50 if a.kind == "ship" else 700)
     tracks, skipped, cid = read_tracks(a.csv)
+    t_first = min(p[0] for pts in tracks.values() for p in pts); t_last = max(p[0] for pts in tracks.values() for p in pts)
+    zones = tz_segments(a.tz, t_first, t_last)
     out, gaps, jumps, meets = analyse(tracks, gap_s, max_kn, a.meet_km, a.meet_min * 60)
     lats = [p[1] for t in out for p in t["pts"]] + [j["b"][0] for j in jumps]   # flagged positions stay in frame
     lons = [p[2] for t in out for p in t["pts"]] + [j["b"][1] for j in jumps]
-    data = {"title": a.title, "subtitle": a.subtitle, "source": a.source, "kind": a.kind, "tz": a.tz, "theme": a.theme,
+    data = {"title": a.title, "subtitle": a.subtitle, "source": a.source, "kind": a.kind, "tz": a.tz, "tz_segments": zones, "theme": a.theme,
             "gap_hours": round(gap_s / 3600, 2), "max_knots": max_kn, "meet_km": a.meet_km,
             "bounds": [[min(lons), min(lats)], [max(lons), max(lats)]], "tracks": out, "gaps": gaps, "jumps": jumps,
             "meetings": meets, "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
             "input": os.path.basename(a.csv), "skipped_rows": skipped}
-    page = open(TEMPLATE, encoding="utf-8").read()
+    with open(TEMPLATE, encoding="utf-8") as f:
+        page = f.read()
     page = page.replace("/*__DATA__*/null", page_json(data)).replace("__TITLE__", html.escape(a.title))
     dest = a.out or os.path.splitext(a.csv)[0] + "_track.html"
-    open(dest, "w", encoding="utf-8").write(page)
+    with open(dest, "w", encoding="utf-8") as f:
+        f.write(page)
     print(f"wrote {dest}")
     print(f"{len(out)} track(s), {sum(t['points'] for t in out)} positions, {skipped} rows skipped")
+    print(f"clock: {zones[0][2]}" + "".join(f", then {z[2]} from {datetime.fromtimestamp(z[0], timezone.utc):%Y-%m-%d %H:%M} UTC" for z in zones[1:]))
     for g in gaps:
         print(f"  signal gap  {g['track']}: {g['hours']} h from {g['from']} ({g['km']} km between last and next report)")
     for g in gaps:

@@ -66,6 +66,35 @@ class Track(unittest.TestCase):
             self.assertEqual(len(data["tracks"]), 2); self.assertIn("gaps", data)
 
 
+    def test_time_zone_names_and_daylight_saving(self):
+        from datetime import timezone as tzu
+        a, b = datetime(2026, 3, 28, 12, tzinfo=tzu.utc), datetime(2026, 3, 30, 12, tzinfo=tzu.utc)
+        self.assertEqual(track.tz_segments("+04:00", a, b), [[int(a.timestamp()), 240, "UTC+04:00"]])
+        self.assertEqual(track.tz_segments("-05:30", a, b)[0][1:], [-330, "UTC-05:30"])
+        self.assertEqual(track.tz_segments("UTC", a, b)[0][1:], [0, "UTC"])
+        self.assertEqual(track.tz_segments("Asia/Dubai", a, b), [[int(a.timestamp()), 240, "Asia/Dubai (UTC+04:00)"]])
+        london = track.tz_segments("Europe/London", a, b)      # clocks go forward at 01:00 UTC on 29 March 2026
+        self.assertEqual([z[1] for z in london], [0, 60])
+        self.assertEqual(london[1][0], int(datetime(2026, 3, 29, 1, tzinfo=tzu.utc).timestamp()))
+        for bad in ("Asia/Dubay", "+4:75", "+15:00", "four"):
+            with self.assertRaises(SystemExit):
+                track.tz_segments(bad, a, b)
+
+    def test_zone_name_reaches_the_page(self):
+        with tempfile.TemporaryDirectory() as d:
+            dest = os.path.join(d, "t.html")
+            track.main([os.path.join(ROOT, "examples", "track", "demo-tankers.csv"), "--tz", "Asia/Dubai", "--out", dest])
+            self.assertEqual(page_data(dest)["tz_segments"][0][1:], [240, "Asia/Dubai (UTC+04:00)"])
+
+    def test_no_usable_rows_is_a_clear_error(self):
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, "bad.csv")
+            Path(src).write_text("time,lat,lon\nnot a date,1,2\n2026-01-01,0,0\n", encoding="utf-8")
+            with self.assertRaises(SystemExit) as e:
+                track.read_tracks(src)
+            self.assertIn("none of the 2 rows could be used", str(e.exception))
+
+
 class Shadow(unittest.TestCase):
     def test_known_noon_elevation(self):
         # London at the December solstice: the sun peaks at about 15 degrees
@@ -158,7 +187,7 @@ class ScrollStory(unittest.TestCase):
             dest, app = os.path.join(d, "s.html"), os.path.join(d, "app")
             story.main([demo, "--out", dest, "--svelte", app])
             data = page_data(dest); self.assertTrue(data["steps"][3]["before"].startswith("data:image/jpeg;base64,"))
-            js = json.load(open(os.path.join(app, "src", "story.json"), encoding="utf-8"))
+            js = json.loads(Path(app, "src", "story.json").read_text(encoding="utf-8"))
             self.assertEqual(js["steps"][3]["before"], "media/lahaina-2023-07-29.jpg")
             self.assertTrue(os.path.exists(os.path.join(app, "public", "media", "lahaina-2023-08-18.jpg")))
             self.assertTrue(os.path.exists(os.path.join(app, "src", "lib", "Scrolly.svelte")))
