@@ -177,6 +177,7 @@ library fingerprint and that it never overwrites an earlier file. An optional [b
 
 ## Related
 
+- [photo-time-check](https://github.com/Ghongha007/photo-time-check): when could this photo have been taken? Metadata and shadows
 - [osint-skills](https://github.com/Ghongha007/osint-skills): verification skills (geolocate, chronolocate, archive evidence, attribute claims)
 - [groundline](https://github.com/Ghongha007/groundline): check every sentence of a draft against its source documents
 - [verify-mcp](https://github.com/Ghongha007/verify-mcp): an MCP server with keyless, read-only verification lookups
