@@ -19,6 +19,7 @@ import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
+from pathlib import Path
 
 
 def page_json(obj):
@@ -166,10 +167,10 @@ def main(argv=None):
     data = {"title": a.title or f"{label}, {hname}" if hname else (a.title or label), "subtitle": a.subtitle, "label": label,
             "lat": a.lat, "lon": a.lon, "hw": hw, "country": hname, "countries": main_c, "globe": globe, "cities": cities[:40],
             "source": a.source, "geocoded": bool(geo), "theme": a.theme, "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
-    page = open(TEMPLATE, encoding="utf-8").read()
+    page = Path(TEMPLATE).read_text(encoding="utf-8")
     page = page.replace("/*__DATA__*/null", page_json(data)).replace("__TITLE__", html.escape(data["title"]))
     dest = a.out or "locator-" + "".join(c if c.isalnum() else "-" for c in label.lower()).strip("-") + ".html"
-    open(dest, "w", encoding="utf-8").write(page)
+    Path(dest).write_text(page, encoding="utf-8")
     print(f"wrote {dest} ({os.path.getsize(dest) // 1024} KB)")
     print(f"  {label} at {a.lat:.4f}, {a.lon:.4f}" + (f" (geocoded: {geo.get('display_name', '')[:90]})" if geo else ""))
     print(f"  country: {hname or 'none found (at sea?)'}; main map about {round(hw * 2)} km across; {len(cities)} nearby cities")

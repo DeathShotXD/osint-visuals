@@ -19,6 +19,7 @@ import math
 import os
 import sys
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 R, D = math.radians, math.degrees
 
@@ -139,10 +140,10 @@ def main(argv=None):
             "samples": samples, "windows": windows, "sunrise": up[0][0] if up else None, "sunset": up[-1][0] if up else None,
             "noon": noon[0], "noon_el": noon[2], "claim": claim, "source": a.source,
             "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
-    page = open(TEMPLATE, encoding="utf-8").read()
+    page = Path(TEMPLATE).read_text(encoding="utf-8")
     page = page.replace("/*__DATA__*/null", page_json(data)).replace("__TITLE__", html.escape(a.title))
     dest = a.out or f"shadow-{a.date}.html"
-    open(dest, "w", encoding="utf-8").write(page)
+    Path(dest).write_text(page, encoding="utf-8")
     hm = lambda m: f"{m // 60:02d}:{m % 60:02d}"
     print(f"wrote {dest}")
     if not windows:

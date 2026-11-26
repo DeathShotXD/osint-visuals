@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from datetime import datetime
+from pathlib import Path
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -33,7 +34,7 @@ def make_png(pixels, w, h):
 
 
 def page_data(path):
-    s = open(path, encoding="utf-8").read()
+    s = Path(path).read_text(encoding="utf-8")
     i = s.index("const D = ") + len("const D = ")
     return json.JSONDecoder().raw_decode(s[i:])[0]
 
@@ -130,7 +131,7 @@ class BeforeAfter(unittest.TestCase):
     def test_own_images(self):
         with tempfile.TemporaryDirectory() as d:
             a, b, dest = os.path.join(d, "a.png"), os.path.join(d, "b.png"), os.path.join(d, "ba.html")
-            open(a, "wb").write(make_png([(10, 20, 30, 255)] * 4, 2, 2)); open(b, "wb").write(make_png([(200, 20, 30, 255)] * 4, 2, 2))
+            Path(a).write_bytes(make_png([(10, 20, 30, 255)] * 4, 2, 2)); Path(b).write_bytes(make_png([(200, 20, 30, 255)] * 4, 2, 2))
             before_after.main(["--before-image", a, "--after-image", b, "--before-label", "1 Jan", "--after-label", "2 Feb",
                                "--credit", "Test images", "--mark", "40%,60%,Bridge", "--out", dest])
             data = page_data(dest)
@@ -141,7 +142,7 @@ class BeforeAfter(unittest.TestCase):
 class ScrollStory(unittest.TestCase):
     def test_demo_parses(self):
         demo = os.path.join(ROOT, "examples", "scroll-story", "demo.md")
-        meta, steps, credits = story.parse(open(demo, encoding="utf-8").read(), os.path.dirname(demo))
+        meta, steps, credits = story.parse(Path(demo).read_text(encoding="utf-8"), os.path.dirname(demo))
         self.assertEqual([s["kind"] for s in steps], ["map", "map", "map", "compare", "image", "text"])
         self.assertEqual(steps[2]["marker"]["label"], "Lahaina"); self.assertEqual(steps[2]["pitch"], 45)
         self.assertEqual(steps[3]["labels"], ["29 Jul 2023", "18 Aug 2023"]); self.assertIn("NASA", credits[0])
@@ -169,20 +170,20 @@ class Escape(unittest.TestCase):
     def test_track_values_cannot_close_the_script(self):
         with tempfile.TemporaryDirectory() as d:
             csvp, dest = os.path.join(d, "x.csv"), os.path.join(d, "x.html")
-            open(csvp, "w").write("vessel,timestamp,lat,lon\n"
+            Path(csvp).write_text("vessel,timestamp,lat,lon\n"
                                   "</script><b>PROOF</b>,2026-06-09T06:00:00Z,24.0,58.0\n"
                                   "SAFE,2026-06-09T08:00:00Z,24.2,58.2\n")
             track.main([csvp, "--source", "</script><b>PROOF</b>", "--out", dest])
-            s = open(dest, encoding="utf-8").read()
+            s = Path(dest).read_text(encoding="utf-8")
             self.assertNotIn("<b>PROOF</b>", s)
             self.assertIn("\\u003c/script", s)
 
     def test_story_metadata_cannot_close_the_script(self):
         with tempfile.TemporaryDirectory() as d:
             src, dest = os.path.join(d, "s.md"), os.path.join(d, "s.html")
-            open(src, "w").write("---\ntitle: t\nsources: </script><b>PROOF</b>\n---\n\n[text]\nHello.\n")
+            Path(src).write_text("---\ntitle: t\nsources: </script><b>PROOF</b>\n---\n\n[text]\nHello.\n")
             story.main([src, "--out", dest])
-            self.assertNotIn("<b>PROOF</b>", open(dest, encoding="utf-8").read())
+            self.assertNotIn("<b>PROOF</b>", Path(dest).read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

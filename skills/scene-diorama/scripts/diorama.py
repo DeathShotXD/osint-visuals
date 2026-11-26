@@ -22,6 +22,7 @@ import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
+from pathlib import Path
 
 
 def page_json(obj):
@@ -239,10 +240,10 @@ def main(argv=None):
     data = {"title": a.title, "place": a.place, "source": a.source, "lat": a.lat, "lon": a.lon, "r": r, "scene": scene, "evidence": ev,
             "counts": {k: len(v) for k, v in scene.items()}, "osm_time": osm.get("osm3s", {}).get("timestamp_osm_base", ""),
             "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
-    page = open(TEMPLATE, encoding="utf-8").read()
+    page = Path(TEMPLATE).read_text(encoding="utf-8")
     page = page.replace("/*__DATA__*/null", page_json(data)).replace("__TITLE__", html.escape(a.title))
     dest = a.out or "diorama.html"
-    open(dest, "w", encoding="utf-8").write(page)
+    Path(dest).write_text(page, encoding="utf-8")
     print(f"wrote {dest} ({'cached' if cached else 'fresh'} OpenStreetMap data, {data['osm_time'] or 'time unknown'})")
     print("  " + ", ".join(f"{v} {k}" for k, v in data["counts"].items()))
     if not scene["buildings"]:

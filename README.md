@@ -9,8 +9,8 @@ every connection opens the records behind it.
 Seven skills in the open [Agent Skills](https://agentskills.io) format, for Claude Code and other agents. Each one
 writes **a single HTML file**. The six graphics have export built in: PNG for all six, WebM video for track-map,
 scene-diorama and before-after, SVG for shadow-diagram and locator-map. The scroll story can also be written as a
-Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only (on Windows, `--tz` zone names need
-`pip install tzdata`; offsets like +03:00 work everywhere), no API keys.
+Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only, no API keys. Time zones: track-map's `--tz` takes an offset like
++04:00; shadow-diagram's also takes a zone name like Africa/Nairobi (on Windows, names need `pip install tzdata`).
 
 | | |
 |---|---|
@@ -111,7 +111,8 @@ python3 skills/network-graph/scripts/network.py --input skills/network-graph/ass
 
 Each prints what it found (gaps, windows, matches) and writes the page. Open it in a browser, pick a frame (16:9, 1:1,
 4:5 or 9:16 Reel; locator-map also has 3:2 web and print) and export. The track, diorama, locator and scroll-story pages load
-pinned libraries (MapLibre, three.js, d3) from unpkg, and the track map and the scroll story's map steps load tiles from
+pinned libraries (MapLibre, three.js, d3) from unpkg, each with a fingerprint that current browsers check (the
+diorama's needs a recent browser), so a file that has been changed is refused. The track map and the scroll story's map steps load tiles from
 OpenFreeMap, so they need a connection when opened. The shadow and before-after pages are fully self-contained
 (before-after embeds both images). The scroll story's Svelte project needs Node 20.19+, 22.12+ or 24+ to build (Vite 8's requirement).
 
@@ -166,7 +167,8 @@ python3 -m unittest discover -s tests
 The tests run offline: track analysis on the regenerated demo data, the sun position against a known value (London's
 noon sun at the December solstice), the shadow windows and claim check, page writing for track, shadow and
 before-after, the diorama and locator geometry helpers, the PNG reader and cloud score used to pick clear satellite
-passes, and the scroll-story parser, its text escaping and its Svelte export.
+passes, the scroll-story parser, its text escaping and its Svelte export, and that text in your data cannot break
+out of the page and run as code. They run automatically on every pull request, on Python 3.9 and 3.13.
 
 The network tests check its input rules (every connection needs a record, no unsafe links), its escaping, the
 library fingerprint and that it never overwrites an earlier file. An optional [browser check](skills/network-graph/references/schema-and-build.md#commands) and the

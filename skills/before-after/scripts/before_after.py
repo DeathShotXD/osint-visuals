@@ -27,6 +27,7 @@ import urllib.parse
 import urllib.request
 import zlib
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 
 
 def page_json(obj):
@@ -51,13 +52,13 @@ def get(url, binary=True):
     os.makedirs(CACHE, exist_ok=True)
     key = os.path.join(CACHE, hashlib.sha1(url.encode()).hexdigest()[:20])
     if os.path.exists(key):
-        return open(key, "rb").read()
+        return Path(key).read_bytes()
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     for attempt in range(3):
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
                 data = r.read()
-            open(key, "wb").write(data); time.sleep(0.15)          # gentle on a shared public service
+            Path(key).write_bytes(data); time.sleep(0.15)          # gentle on a shared public service
             return data
         except Exception as ex:
             if attempt == 2: sys.exit(f"NASA GIBS request failed ({ex}); try again later")
@@ -131,7 +132,7 @@ def data_uri(path_or_bytes, mime=None):
         return f"data:{mime or 'image/jpeg'};base64," + base64.b64encode(path_or_bytes).decode()
     ext = os.path.splitext(path_or_bytes)[1].lower()
     mime = {".png": "image/png", ".webp": "image/webp", ".gif": "image/gif"}.get(ext, "image/jpeg")
-    return f"data:{mime};base64," + base64.b64encode(open(path_or_bytes, "rb").read()).decode()
+    return f"data:{mime};base64," + base64.b64encode(Path(path_or_bytes).read_bytes()).decode()
 
 
 def fmt_day(d):
@@ -194,10 +195,10 @@ def main(argv=None):
             sys.exit("--mark with coordinates needs the NASA mode; with your own images give X%,Y% instead")
     data = {"title": a.title, "subtitle": a.subtitle, "imgs": imgs, "labels": labels, "credit": credit, "source": a.source,
             "marks": marks, "info": info, "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
-    page = open(TEMPLATE, encoding="utf-8").read()
+    page = Path(TEMPLATE).read_text(encoding="utf-8")
     page = page.replace("/*__DATA__*/null", page_json(data)).replace("__TITLE__", html.escape(a.title))
     dest = a.out or "before-after.html"
-    open(dest, "w", encoding="utf-8").write(page)
+    Path(dest).write_text(page, encoding="utf-8")
     print(f"wrote {dest} ({os.path.getsize(dest) // 1024} KB): {labels[0]} vs {labels[1]}")
     if info and min(info["clear"]) < 0.6:
         print("  note: one picture is still partly cloudy or has gaps; say so in the caption, or try other dates")

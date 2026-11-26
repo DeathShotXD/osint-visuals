@@ -37,6 +37,7 @@ import shlex
 import shutil
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 
 def page_json(obj):
@@ -113,7 +114,7 @@ def embed(src, base):
     if re.match(r"^(https?:|data:)", src): return src
     path = src if os.path.isabs(src) else os.path.join(base, src)
     if not os.path.exists(path): sys.exit(f"image not found: {src}")
-    return f"data:{MIME.get(os.path.splitext(path)[1].lower(), 'image/jpeg')};base64," + base64.b64encode(open(path, "rb").read()).decode()
+    return f"data:{MIME.get(os.path.splitext(path)[1].lower(), 'image/jpeg')};base64," + base64.b64encode(Path(path).read_bytes()).decode()
 
 
 def main(argv=None):
@@ -122,7 +123,7 @@ def main(argv=None):
     ap.add_argument("--svelte", metavar="DIR", help="also write a Svelte 5 + Vite project here (images copied, not embedded)")
     a = ap.parse_args(argv)
     base = os.path.dirname(os.path.abspath(a.script))
-    meta, steps, credits = parse(open(a.script, encoding="utf-8").read(), base)
+    meta, steps, credits = parse(Path(a.script).read_text(encoding="utf-8"), base)
     uses_map = any(s["kind"] == "map" for s in steps)
     data = {"title": meta.get("title", "Untitled story"), "dek": meta.get("dek", ""), "byline": meta.get("byline", ""), "theme": meta.get("theme", "dark"),
             "sources": meta.get("sources", ""), "credits": credits, "map": uses_map, "steps": steps,
@@ -131,10 +132,10 @@ def main(argv=None):
     for s in page_data["steps"]:
         for k in ("src", "before", "after"):
             if k in s: s[k] = embed(s[k], base)
-    page = open(TEMPLATE, encoding="utf-8").read()
+    page = Path(TEMPLATE).read_text(encoding="utf-8")
     page = page.replace("/*__DATA__*/null", page_json(page_data)).replace("__TITLE__", html.escape(data["title"]))
     dest = a.out or os.path.splitext(a.script)[0] + ".html"
-    open(dest, "w", encoding="utf-8").write(page)
+    Path(dest).write_text(page, encoding="utf-8")
     counts = {k: sum(1 for s in steps if s["kind"] == k) for k in ("map", "image", "compare", "text")}
     print(f"wrote {dest} ({os.path.getsize(dest) // 1024} KB): " + ", ".join(f"{v} {k}" for k, v in counts.items() if v))
     if a.svelte:
