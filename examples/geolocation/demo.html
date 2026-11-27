@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From frame to coordinate, with the reasoning exposed - geolocation evidence board</title>
+<!-- Written by osint-visuals geolocation-board (board.py). One self-contained page: the features,
+     the checks and every label are embedded below. No network, no library, no key. The board shows
+     an inference and its confidence; it names no person and publishes no residence. -->
+<style>
+  :root { --bg:#0b0f13; --panel:#121820; --ink:#eef2f0; --dim:#9aa7b0; --line:#23303a; --accent:#4fd1c5;
+          --warm:#f2a65a; --red:#e06c75; --blue:#61afef; --gray:#6b777c; --sea:#0e1a22; --good:#4fd1c5; }
+  [data-theme="light"] { --bg:#f6f3ec; --panel:#fffdf8; --ink:#1e2529; --dim:#63707a; --line:#ddd5c6;
+          --accent:#0f766e; --warm:#b9770e; --red:#b03a48; --blue:#2f6db3; --gray:#6b777c; --sea:#e4ecee; --good:#0f766e; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding:22px 22px 40px; }
+  header { max-width:1600px; margin:0 auto 8px; }
+  .kicker { font:800 11px/1 ui-monospace, monospace; letter-spacing:.18em; color:var(--dim); text-transform:uppercase; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .bar { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin:10px auto; max-width:1600px;
+         padding:9px 12px; background:var(--panel); border:1px solid var(--line); border-radius:10px; }
+  .bar .hint { color:var(--dim); font-size:12px; }
+  .bar .sp { flex:1; }
+  .bar button { font:600 12px system-ui, sans-serif; color:var(--ink); background:var(--bg);
+         border:1px solid var(--line); border-radius:7px; padding:7px 10px; cursor:pointer; }
+  .bar button:hover { border-color:var(--accent); }
+  #chart { max-width:1600px; margin:0 auto; background:var(--panel); border:1px solid var(--line);
+           border-radius:10px; padding:6px; overflow:auto; }
+  #chart svg { display:block; width:100%; height:auto; }
+  #table { display:none; max-width:1600px; margin:12px auto 0; background:var(--panel); border:1px solid var(--line);
+           border-radius:10px; padding:12px; }
+  #table h3 { margin:0 0 8px; font-size:13px; }
+  table.big { width:100%; border-collapse:collapse; font-size:12px; margin-bottom:14px; }
+  table.big th, table.big td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }
+  table.big th { color:var(--dim); }
+  footer { max-width:1600px; margin:12px auto 0; color:var(--dim); font-size:11px; }
+</style></head>
+<body>
+<header>
+  <h1 class="sr-only">From frame to coordinate, with the reasoning exposed</h1>
+</header>
+
+<div class="bar" id="bar"></div>
+<div id="chart"></div>
+<div id="table"></div>
+
+<script>
+const D = {"title":"From frame to coordinate, with the reasoning exposed","subtitle":"Invented scene. A method demonstration, not a geolocation of any real place.","place":"Invented mid-latitude scene","sources":"Invented frame and features, and a synthetic coordinate for the sun check. Method: Benjamin Strick, Haiti geolocation explainer (May 2024); Bellingcat 3D imagery guide (2019); Bellingcat sun and shadows guide (2020).","generated":"2026-11-27 16:51 UTC","features":[{"id":"F1","label":"wall and factory roof","bearing":55.0,"distance":420.0,"match":true},{"id":"F2","label":"road turn","bearing":323.0,"distance":300.0,"match":true},{"id":"F3","label":"double-triangle roof","bearing":32.0,"distance":500.0,"match":true}],"checks":[{"label":"Terrain profiled against a DEM","ok":true,"core":false},{"label":"Route read as a sequence","ok":true,"core":false},{"label":"Three independent features agree","ok":true,"core":true},{"label":"Date bounded by dated imagery","ok":true,"core":true},{"label":"Break attempt failed","ok":true,"core":true},{"label":"Second sensor or source corroborates","ok":false,"core":true}],"score":3,"max":4,"gaps":1,"core_count":4,"sun":{"missing":false,"lat":40.0,"lon":-75.0,"date":"2026-08-10","tz":"-04:00","claimed":"16:30","azimuth":256.1,"elevation":39.3,"expected_shadow":76.1,"measured_shadow":70.0,"shadow_tolerance":8.0,"shadow_diff":6.1,"shadow_fits":true,"height":2.0,"length":2.4,"length_tolerance_pct":15.0,"expected_length":2.44,"length_diff_pct":1.8,"length_fits":true,"below_horizon":false},"theme":"dark","input":"demo.json"};
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const W = 1600, PAD = 40, TOP = 140;
+document.documentElement.dataset.theme = D.theme || "dark";
+
+const svg = document.createElementNS(NS, "svg");
+svg.setAttribute("role", "img");
+svg.setAttribute("aria-label", D.title);
+function el(tag, attrs, parent = svg, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  parent.appendChild(e); return e;
+}
+function txt(x, y, s, size, fill, anchor, weight, family) {
+  return el("text", { x:x, y:y, "font-size":size || 12, fill:fill || "var(--ink)",
+    "text-anchor":anchor || "start", "font-weight":weight || "400",
+    "font-family":family || "system-ui, sans-serif" }, svg, s);
+}
+function panel(x, y, w, h) {
+  el("rect", { x:x, y:y, width:w, height:h, rx:10, fill:"var(--panel)", stroke:"var(--line)", "stroke-width":1 });
+}
+function wrap(s, n) {
+  const words = String(s || "").split(/\s+/).filter(Boolean), lines = []; let line = "";
+  for (const w of words) {
+    if ((line + " " + w).trim().length > n) { if (line) lines.push(line); line = w; }
+    else line = (line + " " + w).trim();
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+const num = n => Number(n).toLocaleString("en");
+const metres = m => m >= 1000 ? (m / 1000).toFixed(m % 1000 ? 1 : 0) + " km" : Math.round(m) + " m";
+function niceStep(v) {
+  const p = Math.pow(10, Math.floor(Math.log10(Math.max(v, 1e-6))));
+  const n = v / p;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
+}
+
+let H = 920;
+function render() {
+  H = 920;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  el("rect", { x:0, y:0, width:W, height:H, fill:"var(--bg)" });
+
+  txt(PAD, 44, "GEOLOCATION EVIDENCE BOARD / METHOD VIEW", 11, "var(--accent)", "start", "700", "ui-monospace, monospace");
+  txt(PAD, 80, D.title, 26, "var(--ink)", "start", "800");
+  if (D.subtitle) txt(PAD, 104, D.subtitle, 12.5, "var(--dim)");
+  if (D.place) txt(PAD, 126, D.place, 11.5, "var(--gray)");
+
+  planView(40, TOP, 780, 650);
+  sunPanel(860, TOP, 700, 310);
+  checkPanel(860, 470, 700, 320);
+  footer();
+  $("chart").replaceChildren(svg);
+  buildTable();
+}
+
+// ---------------------------------------------------------------- plan view
+function planView(x, y, w, h) {
+  panel(x, y, w, h);
+  txt(x + 24, y + 34, "1. Plan view from the frame", 15, "var(--ink)", "start", "700");
+  txt(x + 24, y + 55, "Camera position, bearing to each feature, relative size. North is up.", 11, "var(--dim)");
+
+  const plotX = x + 36, plotY = y + 78, plotW = w - 72, plotH = h - 128;
+  const cx = plotX + plotW / 2, cy = plotY + plotH / 2;
+  const radius = Math.min(plotW, plotH) / 2 - 34;
+
+  el("rect", { x:plotX, y:plotY, width:plotW, height:plotH, rx:8, fill:"var(--sea)", stroke:"var(--line)" });
+  for (let i = 1; i < 12; i++) {
+    const gx = plotX + i * plotW / 12;
+    el("line", { x1:gx, y1:plotY, x2:gx, y2:plotY + plotH, stroke:"var(--line)", "stroke-width":.6, opacity:.8 });
+    const gy = plotY + i * plotH / 12;
+    el("line", { x1:plotX, y1:gy, x2:plotX + plotW, y2:gy, stroke:"var(--line)", "stroke-width":.6, opacity:.8 });
+  }
+
+  const maxDist = Math.max(1, ...D.features.map(f => f.distance));
+  // distance rings, labelled at the lower right where the lines rarely run
+  for (const k of [1 / 3, 2 / 3, 1]) {
+    el("circle", { cx:cx, cy:cy, r:radius * k, fill:"none", stroke:"var(--line)",
+      "stroke-width":.8, "stroke-dasharray":k === 1 ? "3 5" : "2 6", opacity:.75 });
+    const a = 135 * Math.PI / 180;
+    txt(cx + Math.sin(a) * radius * k + 6, cy - Math.cos(a) * radius * k + 4,
+        metres(maxDist * k), 9, "var(--gray)", "start", "400", "ui-monospace, monospace");
+  }
+  const at = f => {
+    const r = f.distance / maxDist * radius;
+    const a = f.bearing * Math.PI / 180;
+    return { x: cx + Math.sin(a) * r, y: cy - Math.cos(a) * r, r:r };
+  };
+
+  // camera
+  el("circle", { cx:cx, cy:cy, r:9, fill:"var(--accent)", stroke:"var(--bg)", "stroke-width":2 });
+  txt(cx + 14, cy + 4, "camera", 11, "var(--accent)", "start", "700");
+
+  D.features.forEach(f => {
+    const p = at(f);
+    const col = f.match ? "var(--accent)" : "var(--red)";
+    el("line", { x1:cx, y1:cy, x2:p.x, y2:p.y, stroke:col, "stroke-width":1.5, "stroke-dasharray":"4 4", opacity:.9 });
+    el("circle", { cx:p.x, cy:p.y, r:7, fill:col, stroke:"var(--bg)", "stroke-width":1.5 });
+    const mx = (cx + p.x) / 2, my = (cy + p.y) / 2;
+    txt(mx + 5, my - 5, `${f.bearing.toFixed(0)} deg`, 10, col, "start", "700", "ui-monospace, monospace");
+    const right = p.x < plotX + plotW - 190;
+    const lx = right ? p.x + 12 : p.x - 12;
+    txt(lx, p.y + 4, `${f.id}  ${f.label}`, 11, "var(--ink)", right ? "start" : "end");
+  });
+
+  // north arrow
+  const nx = plotX + 30, ny = plotY + 34;
+  el("line", { x1:nx, y1:ny + 34, x2:nx, y2:ny, stroke:"var(--ink)", "stroke-width":2 });
+  el("path", { d:`M ${nx} ${ny - 6} l -6 12 l 12 0 z`, fill:"var(--ink)" });
+  txt(nx, ny - 12, "N", 11, "var(--ink)", "middle", "700");
+
+  // scale bar
+  const nice = niceStep(maxDist / 2.6);
+  const barPx = nice / maxDist * radius;
+  const by = plotY + plotH - 26, bx = cx - barPx / 2;
+  el("line", { x1:bx, y1:by, x2:bx + barPx, y2:by, stroke:"var(--dim)", "stroke-width":2 });
+  el("line", { x1:bx, y1:by - 4, x2:bx, y2:by + 4, stroke:"var(--dim)", "stroke-width":2 });
+  el("line", { x1:bx + barPx, y1:by - 4, x2:bx + barPx, y2:by + 4, stroke:"var(--dim)", "stroke-width":2 });
+  txt(bx, by - 8, "0", 9.5, "var(--dim)", "start", "400", "ui-monospace, monospace");
+  txt(bx + barPx, by - 8, metres(nice), 9.5, "var(--dim)", "end", "400", "ui-monospace, monospace");
+
+  txt(x + 24, y + h - 16, "Schematic plan. The geometry, not the ground truth, is the lesson.", 10, "var(--gray)");
+}
+
+// ---------------------------------------------------------------- sun check
+function sunPanel(x, y, w, h) {
+  panel(x, y, w, h);
+  txt(x + 24, y + 34, "2. Sun and shadow check", 15, "var(--ink)", "start", "700");
+  txt(x + 24, y + 55, "A claimed time is tested against sun azimuth and elevation.", 11, "var(--dim)");
+
+  const S = D.sun || { missing:true };
+  if (S.missing) {
+    txt(x + 24, y + 100, "No sun check: add lat, lon, date, tz and claimed_time.", 12.5, "var(--dim)");
+    txt(x + 24, y + 124, "Without them the board still shows the features and the checklist.", 11.5, "var(--dim)");
+    txt(x + 24, y + h - 18, "A time claim is a window, not a clock reading.", 10, "var(--gray)");
+    return;
+  }
+
+  const ccx = x + 170, ccy = y + 172, r = 78;
+  el("circle", { cx:ccx, cy:ccy, r:r, fill:"var(--sea)", stroke:"var(--line)" });
+  el("circle", { cx:ccx, cy:ccy, r:2, fill:"var(--dim)" });
+  for (const [ang, lab] of [[0,"N"],[90,"E"],[180,"S"],[270,"W"]]) {
+    const a = ang * Math.PI / 180;
+    txt(ccx + Math.sin(a) * (r + 15), ccy - Math.cos(a) * (r + 15) + 4, lab, 9.5, "var(--dim)", "middle", "400", "ui-monospace, monospace");
+  }
+
+  if (S.below_horizon) {
+    txt(x + 280, y + 100, `Claimed ${S.claimed} (${S.tz})`, 13, "var(--ink)", "start", "700");
+    txt(x + 280, y + 124, "Sun below the horizon at this time.", 12, "var(--red)");
+    txt(x + 280, y + 146, "There is no shadow to compare; pick a daytime claim.", 11, "var(--dim)");
+    txt(x + 24, y + h - 18, "Illustrative sun position. A real check uses the date, place and time zone.", 10, "var(--gray)");
+    return;
+  }
+
+  const sr = r * (1 - S.elevation / 90);
+  const sunx = ccx + Math.sin(S.azimuth * Math.PI / 180) * sr;
+  const suny = ccy - Math.cos(S.azimuth * Math.PI / 180) * sr;
+  el("line", { x1:ccx, y1:ccy, x2:sunx, y2:suny, stroke:"var(--warm)", "stroke-width":2 });
+  el("circle", { cx:sunx, cy:suny, r:7, fill:"var(--warm)", stroke:"var(--bg)", "stroke-width":1 });
+  txt(sunx, suny + 22, `sun ${S.azimuth} / ${S.elevation}`, 10, "var(--warm)", "middle", "700", "ui-monospace, monospace");
+
+  const shx = ccx - Math.sin(S.azimuth * Math.PI / 180) * r * 0.9;
+  const shy = ccy + Math.cos(S.azimuth * Math.PI / 180) * r * 0.9;
+  el("line", { x1:ccx, y1:ccy, x2:shx, y2:shy, stroke:"var(--blue)", "stroke-width":2, "stroke-dasharray":"5 4" });
+  if (S.measured_shadow != null) txt(shx, shy - 12, `shadow ${S.measured_shadow}`, 10, "var(--blue)", "middle", "700", "ui-monospace, monospace");
+
+  const tx = x + 300;
+  txt(tx, y + 96, `Claimed ${S.claimed} (${S.tz})`, 13, "var(--ink)", "start", "700");
+  txt(tx, y + 118, `Sun azimuth ${S.azimuth} deg, elevation ${S.elevation} deg.`, 11, "var(--dim)");
+  txt(tx, y + 136, `The shadow would point about ${S.expected_shadow} deg.`, 11, "var(--dim)");
+  if (S.measured_shadow != null) {
+    const line = `Measured ${S.measured_shadow} deg: difference ${S.shadow_diff} deg, ` +
+      (S.shadow_fits ? `within ${S.shadow_tolerance}.` : `outside ${S.shadow_tolerance}.`);
+    txt(tx, y + 160, line, 11, S.shadow_fits ? "var(--accent)" : "var(--red)", "start", "600");
+  } else {
+    txt(tx, y + 160, "No measured shadow given; no direction verdict.", 11, "var(--dim)");
+  }
+  if (S.expected_length != null && S.length_fits != null) {
+    const line = `Post ${S.height} m, shadow ${S.length} m; expected ${S.expected_length} m ` +
+      (S.length_fits ? `within ${S.length_tolerance_pct}%.` : `outside ${S.length_tolerance_pct}%.`);
+    txt(tx, y + 182, line, 11, S.length_fits ? "var(--accent)" : "var(--red)", "start", "600");
+  }
+  txt(tx, y + 212, "A time claim is a window, not a clock reading.", 11, "var(--accent)", "start", "600");
+  txt(x + 24, y + h - 18, "Illustrative sun position. A real check uses the date, place and time zone.", 10, "var(--gray)");
+}
+
+// ---------------------------------------------------------------- checklist
+function checkPanel(x, y, w, h) {
+  panel(x, y, w, h);
+  txt(x + 24, y + 34, "3. Over-determination and confidence", 15, "var(--ink)", "start", "700");
+  txt(x + 24, y + 55, "A core check counts toward the score. Extra checks are shown but do not.", 11, "var(--dim)");
+
+  D.checks.forEach((c, i) => {
+    const yy = y + 84 + i * 30;
+    const col = c.ok ? "var(--accent)" : "var(--gray)";
+    el("circle", { cx:x + 36, cy:yy - 4, r:9, fill:col, opacity:c.ok ? .20 : .12 });
+    txt(x + 36, yy, c.ok ? "x" : "?", 10, c.ok ? "var(--accent)" : "var(--dim)", "middle", "700");
+    txt(x + 56, yy, c.label, 12, c.ok ? "var(--ink)" : "var(--dim)");
+    if (c.core) txt(x + w - 24, yy, "core", 9.5, "var(--dim)", "end", "600", "ui-monospace, monospace");
+  });
+
+  const barY = y + h - 58;
+  txt(x + 24, barY, "Evidence score", 11, "var(--dim)", "start", "600");
+  const slots = Math.max(D.max, 1);
+  for (let i = 0; i < slots; i++) {
+    el("rect", { x:x + 132 + i * 42, y:barY - 12, width:34, height:12, rx:3,
+      fill:i < D.score ? "var(--accent)" : "var(--line)", opacity:i < D.score ? .8 : 1 });
+  }
+  txt(x + 132 + slots * 42 + 8, barY - 2, `${D.score} / ${D.max}`, 13, "var(--ink)", "start", "700", "ui-monospace, monospace");
+  txt(x + 132 + slots * 42 + 70, barY - 2, verdict(), 11, "var(--dim)");
+}
+
+function verdict() {
+  if (!D.max) return "no core checks were scored";
+  if (D.score === D.max) return "over-determined; publish with the gaps stated";
+  if (D.score >= D.max - 1) return "publish as a finding; state the gap";
+  if (D.score >= Math.ceil(D.max / 2)) return "a lead, not yet a finding";
+  return "do not publish as a finding";
+}
+
+// ---------------------------------------------------------------- footer and table
+function footer() {
+  const y = H - 78;
+  el("line", { x1:PAD, y1:y - 12, x2:W - PAD, y2:y - 12, stroke:"var(--line)" });
+  const lines = wrap(D.sources || "Sources not stated.", 150).slice(0, 2);
+  lines.forEach((line, i) => txt(PAD, y + i * 16, line, 10.5, "var(--dim)"));
+  txt(PAD, y + 38, "This board states an inference. A coordinate is not a person's presence. No person is named.",
+      10.5, "var(--dim)");
+  txt(PAD, y + 56, `Generated ${D.generated} from ${D.input}. Made with osint-visuals.`, 10, "var(--gray)");
+}
+
+function buildTable() {
+  const box = $("table"); box.replaceChildren();
+  const mk = (title, head, rows) => {
+    const h = document.createElement("h3"); h.textContent = title; box.append(h);
+    const t = document.createElement("table"); t.className = "big";
+    const hr = document.createElement("tr");
+    head.forEach(v => { const th = document.createElement("th"); th.textContent = v; hr.append(th); }); t.append(hr);
+    rows.forEach(r => { const tr = document.createElement("tr");
+      r.forEach(v => { const td = document.createElement("td"); td.textContent = v; tr.append(td); }); t.append(tr); });
+    box.append(t);
+  };
+  mk("Features", ["Id", "Label", "Bearing", "Distance", "Match"],
+     D.features.map(f => [f.id, f.label, f.bearing + " deg", metres(f.distance), f.match ? "yes" : "no"]));
+  mk("Checks", ["Check", "Core", "Met"],
+     D.checks.map(c => [c.label, c.core ? "yes" : "no", c.ok ? "yes" : "no"]));
+  const S = D.sun || {};
+  if (S.missing) {
+    mk("Sun and shadow", ["Field", "Value"], [["Sun check", "not run: place, date or time missing"]]);
+  } else {
+    mk("Sun and shadow", ["Field", "Value"], [
+      ["Place", `${S.lat}, ${S.lon}`],
+      ["Date and time", `${S.date} ${S.claimed} (${S.tz})`],
+      ["Sun azimuth", S.azimuth + " deg"],
+      ["Sun elevation", S.elevation + " deg"],
+      ["Shadow expected", S.expected_shadow + " deg"],
+      ["Shadow measured", S.measured_shadow == null ? "-" : S.measured_shadow + " deg"],
+      ["Shadow difference", S.shadow_diff == null ? "-" : S.shadow_diff + " deg"],
+      ["Direction fits", S.shadow_fits == null ? "-" : (S.shadow_fits ? "yes" : "no")],
+      ["Length expected", S.expected_length == null ? "-" : S.expected_length + " m"],
+      ["Length difference", S.length_diff_pct == null ? "-" : S.length_diff_pct + "%"],
+      ["Length fits", S.length_fits == null ? "-" : (S.length_fits ? "yes" : "no")]
+    ]);
+  }
+}
+
+// ---------------------------------------------------------------- toolbar and export
+function slug() { return (D.title || "board").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48); }
+function save(blob, ext) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${slug()}.${ext}`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function svgString() {
+  const c = svg.cloneNode(true);
+  c.setAttribute("xmlns", NS); c.setAttribute("width", W); c.setAttribute("height", H);
+  return new XMLSerializer().serializeToString(c);
+}
+(function toolbar() {
+  const bar = $("bar");
+  const hint = document.createElement("span"); hint.className = "hint";
+  hint.textContent = `${D.features.length} features, evidence score ${D.score} / ${D.max}`;
+  bar.append(hint);
+  const sp = document.createElement("span"); sp.className = "sp"; bar.append(sp);
+  const tb = document.createElement("button"); tb.textContent = "Details";
+  tb.onclick = () => { const t = $("table"); t.style.display = t.style.display === "block" ? "none" : "block"; };
+  const png = document.createElement("button"); png.textContent = "PNG";
+  const sv = document.createElement("button"); sv.textContent = "SVG";
+  bar.append(tb, png, sv);
+  png.onclick = () => {
+    const img = new Image();
+    const url = URL.createObjectURL(new Blob([svgString()], { type:"image/svg+xml" }));
+    img.onload = () => {
+      const c = document.createElement("canvas"); c.width = W; c.height = H;
+      const g = c.getContext("2d");
+      const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#0b0f13";
+      g.fillStyle = bg; g.fillRect(0, 0, W, H); g.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url); c.toBlob(b => save(b, "png"));
+    };
+    img.src = url;
+  };
+  sv.onclick = () => save(new Blob([svgString()], { type:"image/svg+xml" }), "svg");
+})();
+
+$("chart").replaceChildren(svg);
+render();
+</script>
+</body></html>

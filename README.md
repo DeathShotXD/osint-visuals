@@ -6,9 +6,9 @@ diagram that tests a claimed time, a 3D miniature of the scene with the camera's
 map, a before-and-after satellite slider, a whole scrolling map story, or a network of who is linked to whom where
 every connection opens the records behind it.
 
-Seven skills in the open [Agent Skills](https://agentskills.io) format, for Claude Code and other agents. Each one
-writes **a single HTML file**. The six graphics have export built in: PNG for all six, WebM video for track-map,
-scene-diorama and before-after, SVG for shadow-diagram and locator-map. The scroll story can also be written as a
+Eight skills in the open [Agent Skills](https://agentskills.io) format, for Claude Code and other agents. Each one
+writes **a single HTML file**. The seven graphics have export built in: PNG for all seven, WebM video for track-map,
+scene-diorama and before-after, SVG for shadow-diagram, locator-map and geolocation-board. The scroll story can also be written as a
 Svelte 5 project for a newsroom's own build. Python 3.9+, standard library only, no API keys. Time zones: `--tz` takes an offset like +04:00 or a
 zone name like Asia/Dubai; with a name, track-map's clock follows daylight-saving changes (on Windows, names need
 `pip install tzdata`).
@@ -23,14 +23,16 @@ zone name like Asia/Dubai; with a name, track-map's clock follows daylight-savin
 | **before-after**: a slider readers can drag, from free NASA imagery (the clearest pass near each date is picked for you) or your own licensed images. | **scroll-story**: a plain-text script becomes a scrolling story: the map flies between places, pictures change, the before/after divider moves with the scroll. Also as a Svelte project. |
 | ![A fictional network with one person selected and the source record behind their connection open](docs/gallery/network-graph.png) | ![A fictional network with names in Arabic, Hebrew, Chinese, Korean, Greek and other scripts](docs/gallery/network-graph-multilingual.png) |
 | **network-graph**: people, organisations, places or any types you define, linked only by connections you supply, each one backed by records you can open, which can hold the quote, where it is in the source, and what is uncertain. Search, filters, one- or two-step neighbourhoods and a table view; save the current view as JSON. Works offline. | Names and quotes in many scripts, including Arabic and Hebrew written right to left; the interface stays in English. [Open the demo](examples/network/demo.html) or [the multilingual one](examples/network/multilingual.html). |
+| ![A geolocation evidence board with a plan view, a sun and shadow check and a confidence score](docs/gallery/geolocation-board.png) | |
+| **geolocation-board**: a place and time claim with the reasoning exposed: bearings to numbered features, a sun and shadow check against a claimed time, a checklist and a score from 0 to 4, and the sources on the graphic. | The demo is an invented scene with a synthetic coordinate. It is not a geolocation of a real place. |
 
 ![The approximate view from the camera position in the diorama](docs/gallery/scene-diorama-camera-view.png)
 
 *The diorama's camera's view: the scene from where the footage was filmed, to compare with the frame.*
 
-The track, shadow, diorama and locator examples use invented scenarios (fictional ships, claims and events) on real
-maps. The before-after and scroll-story examples use real NASA imagery of Lahaina, Maui, before and after the
-wildfire of 8 August 2023.
+The track, shadow, diorama, locator and geolocation-board examples use invented scenarios (fictional ships,
+claims, events and scenes) on real or synthetic coordinates. The before-after and scroll-story examples use real
+NASA imagery of Lahaina, Maui, before and after the wildfire of 8 August 2023.
 The network examples are entirely fictional: every name, record and quote.
 
 ## Why
@@ -108,6 +110,8 @@ python3 skills/before-after/scripts/before_after.py --lat 20.873 --lon -156.677 
     --before 2023-08-05 --after 2023-08-10 --title "Lahaina before and after the fire"
 python3 skills/scroll-story/scripts/story.py examples/scroll-story/demo.md --svelte story-app/
 python3 skills/network-graph/scripts/network.py --input skills/network-graph/assets/demo.json --output network.html
+python3 skills/geolocation-board/scripts/board.py skills/geolocation-board/assets/demo.json \
+    --out examples/geolocation/demo.html
 ```
 
 Each prints what it found (gaps, windows, matches) and writes the page. Open it in a browser, pick a frame (16:9, 1:1,
@@ -129,6 +133,7 @@ in its [schema reference](skills/network-graph/references/schema-and-build.md).
 | scene-diorama | [Overpass API](https://overpass-api.de) (OpenStreetMap) | ODbL: credit "© OpenStreetMap contributors". One request per place (up to two retries if the server is busy), cached; Overpass is shared, so no bulk loops. |
 | locator-map | [Natural Earth](https://www.naturalearthdata.com), [Nominatim](https://nominatim.org) | Natural Earth is public domain. Nominatim: max 1 request per second, identifying User-Agent, results cached ([policy](https://operations.osmfoundation.org/policies/nominatim/)). |
 | shadow-diagram | none | Sun positions computed locally (NOAA equations). |
+| geolocation-board | none | Sun positions computed locally (NOAA equations). The plan view is schematic; bearings and distances are yours to check. |
 | before-after | your images, or [NASA GIBS](https://www.earthdata.nasa.gov/gibs) (HLS, VIIRS, MODIS) | Keyless; the graphic credits NASA GIBS and, for HLS Sentinel-2, "contains modified Copernicus Sentinel data". The date search fetches up to one small preview per day, from the asked-for date out to 12 days before or after (`--window`), stopping early at a clear pass; cached. Your own images: their owner's terms. |
 | scroll-story | your script and images; map steps from OpenFreeMap | Map credit in the page's sources footer; every image needs its own credit. |
 | network-graph | your JSON and its records | Your sources' own terms apply. The bundled vis-network library is MIT or Apache-2.0 ([notices](skills/network-graph/assets/vendor/NOTICE.md)). |
@@ -158,6 +163,9 @@ These limits are written into the skills. If you fork the pack, please keep them
 - In the network graph, where a node sits means nothing: the layout is physics, not geography or importance. A
   record marked `recorded` has a source attached, which is not the same as being proven. Filters only hide
   things: the page and its JSON still hold everything you put in, so remove sensitive records before sharing.
+- The geolocation board states an inference, not a probability. The score is a checklist with the checks named;
+  a high score is a reason to publish the claim with its gaps, not proof that the coordinate is right. A
+  coordinate is a claim about a camera and a frame, not about a person's presence.
 
 ## Tests
 
@@ -165,8 +173,9 @@ These limits are written into the skills. If you fork the pack, please keep them
 python3 -m unittest discover -s tests
 ```
 
-The tests run offline: track analysis on the regenerated demo data, the sun position against a known value (London's
-noon sun at the December solstice), the shadow windows and claim check, page writing for track, shadow and
+The tests run offline: track analysis on the regenerated demo data, the sun position against known values (London's
+noon sun at the December solstice and an afternoon in Nairobi), the shadow windows and claim check, the geolocation
+board's sun check, checklist score and input escaping, page writing for track, shadow and
 before-after, the diorama and locator geometry helpers, the PNG reader and cloud score used to pick clear satellite
 passes, the scroll-story parser, its text escaping and its Svelte export, and that text in your data cannot break
 out of the page and run as code. They run automatically on every pull request, on Python 3.9 and 3.13.

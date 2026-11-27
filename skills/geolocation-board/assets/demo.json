@@ -1,0 +1,25 @@
+{
+  "title": "From frame to coordinate, with the reasoning exposed",
+  "subtitle": "Invented scene. A method demonstration, not a geolocation of any real place.",
+  "place": "Invented mid-latitude scene",
+  "lat": 40.0,
+  "lon": -75.0,
+  "date": "2026-08-10",
+  "tz": "-04:00",
+  "claimed_time": "16:30",
+  "shadow": {"azimuth_deg": 70, "tolerance_deg": 8, "height": 2.0, "length": 2.4, "length_tolerance_pct": 15},
+  "features": [
+    {"id": "F1", "label": "wall and factory roof", "bearing_deg": 55, "distance_m": 420, "match": true},
+    {"id": "F2", "label": "road turn", "bearing_deg": 323, "distance_m": 300, "match": true},
+    {"id": "F3", "label": "double-triangle roof", "bearing_deg": 32, "distance_m": 500, "match": true}
+  ],
+  "checks": [
+    {"label": "Terrain profiled against a DEM", "ok": true, "core": false},
+    {"label": "Route read as a sequence", "ok": true, "core": false},
+    {"label": "Three independent features agree", "ok": true, "core": true},
+    {"label": "Date bounded by dated imagery", "ok": true, "core": true},
+    {"label": "Break attempt failed", "ok": true, "core": true},
+    {"label": "Second sensor or source corroborates", "ok": false, "core": true}
+  ],
+  "sources": "Invented frame and features, and a synthetic coordinate for the sun check. Method: Benjamin Strick, Haiti geolocation explainer (May 2024); Bellingcat 3D imagery guide (2019); Bellingcat sun and shadows guide (2020)."
+}
